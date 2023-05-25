@@ -47,15 +47,6 @@ impl Buffer {
         }
     }
 
-    pub fn remove_file_system_node(&mut self, node_path: &str) {
-        let items = self.file_system.get_items().unwrap();
-        for item in items {
-            if self.file_system.item_pathname(&item).unwrap() == node_path {
-                self.file_system.remove(&item).unwrap();
-            }
-        }
-    }
-
     pub fn close_all_nodes(&mut self) {
         let nodes = self.file_system.get_items().unwrap();
         for mut node in nodes {
