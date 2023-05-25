@@ -41,7 +41,7 @@ pub async fn start(min_year: isize, max_year: isize, check_bts: Vec<(bool, Strin
                                 if should_stop() { return ; }
                                 let file_name = i[0].to_string();
                                 let file_name = file_name[1..file_name.len()-1].to_string();
-                                println!("{}", file_name);
+                                // println!("{}", file_name);
                                 let mut url = data::FETCH_URL.to_string();
                                 url.push_str(&file_name.as_str());
                                 let save_path = format!("{}/{}/{}/{}", data::SAVE_DIR, &name, year, file_name);
@@ -49,7 +49,7 @@ pub async fn start(min_year: isize, max_year: isize, check_bts: Vec<(bool, Strin
                                 let mut status = download(&url, &save_path).await;
                                 while !status {
                                     sleep().await;
-                                    println!("Retry: {}", save_path);
+                                    change_status_bar_content(&format!("Retry: {}", save_path));
                                     status = download(&url, &save_path).await;
                                 }
                             }
@@ -59,7 +59,6 @@ pub async fn start(min_year: isize, max_year: isize, check_bts: Vec<(bool, Strin
             }
         }
     }
-    println!("Finish");
     change_status_bar_content(&"Finish".to_string());
     // return ;
 }
@@ -109,7 +108,7 @@ async fn download(url: &String, save_path: &String) -> bool {
         .await
         .unwrap();
 
-    // println!("{} : {}", save_path, response.status());
+    println!("{} : {}", save_path, response.status());
 
     // 判断是否成功
     if response.status().is_success() {

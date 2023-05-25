@@ -10,6 +10,7 @@ pub static mut STATUS_BAR_CONTENT: String = std::string::String::new();
 
 pub fn change_status_bar_content(s: &String) {
     unsafe { STATUS_BAR_CONTENT = s.to_string() };
+    println!("{}", s);
 }
 
 // 保存双击时第一次点击的路径，方便和第二次比较
@@ -19,7 +20,7 @@ static mut DOUBLE_CLICK_TIMER_VEC: Vec<time::Instant> = vec![];
 fn double_click_status_clear() {
     unsafe { DOUBLE_CLICK_TIMER_VEC.clear() };
     unsafe { SELECT_ITEM_PATH.clear() };
-    println!("Lose Item.");
+    // println!("Lose Item.");
 }
 
 pub fn refresh_file_system(file_system: &mut tree::Tree, root_path: &str) {
@@ -131,12 +132,12 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> (
                                     let interval_duration = time::Duration::from_secs_f32(data::DOUBLE_CLICK_INTERVAL);
                                     // 如果间隔时间小于等于 interval，才能打开
                                     if duration <= interval_duration {
-                                        println!("Open Item: {}", p);
+                                        // println!("Open Item: {}", p);
                                         open::that(p).unwrap();
                                     }
                                     double_click_status_clear();
                                 } else {
-                                    println!("Select Item: {}", p);
+                                    // println!("Select Item: {}", p);
                                     unsafe { SELECT_ITEM_PATH = p };
                                     // 添加一个计时器
                                     unsafe { DOUBLE_CLICK_TIMER_VEC.push(time::Instant::now()) };
