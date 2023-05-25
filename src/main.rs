@@ -15,7 +15,7 @@ async fn main() {
     let mut app = fltk::app::App::default();
     app.set_scheme(fltk::app::Scheme::Gtk);
     let (sender, receiver) = fltk::app::channel::<ui::Message>();
-    let mut root = fltk::window::Window::new(100, 100, 850, 930, "Main Window");
+    let mut root = fltk::window::Window::new(50, 50, 850, 950, "Main Window");
     root.resizable(&root);
 
     let mut buffer: ui::Buffer = ui::add_widgets(&mut root, sender);

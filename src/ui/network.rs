@@ -1,4 +1,6 @@
 use fltk::{prelude::*};
+use rand::Rng;
+use tokio::process::Command;
 use std::collections::HashMap;
 
 use crate::ui::change_status_bar_content;
@@ -35,9 +37,11 @@ pub async fn start(buffer: Buffer) -> () {
                                 let save_path = format!("{}/{}/{}/{}", data::SAVE_DIR, &name, year, file_name);
                                 change_status_bar_content(&format!("Downloading: {}", &save_path));
                                 let mut status = download(&url, &save_path).await;
+                                sleep().await;
                                 while !status {
                                     println!("Retry: {}", save_path);
                                     status = download(&url, &save_path).await;
+                                    sleep().await;
                                 }
                             }
                         }
@@ -46,6 +50,15 @@ pub async fn start(buffer: Buffer) -> () {
             }
         }
     }
+}
+
+async fn sleep() {
+    let sleep_time: isize = rand::thread_rng().gen_range(1..3);
+    let mut waiter = Command::new("sleep")
+        .arg(sleep_time.to_string())
+        .spawn()
+        .unwrap();
+    waiter.wait().await.unwrap();
 }
 
 async fn search_file(subject: &str, year: &str, season: &str) -> serde_json::Value {

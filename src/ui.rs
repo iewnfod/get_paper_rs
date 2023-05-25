@@ -1,13 +1,17 @@
-use fltk::{prelude::*, *, enums::Color};
+use fltk::{prelude::*, *, enums::{Color, Event}};
 
 pub mod data;
 pub mod network;
 
+// 状态栏内容
 pub static mut STATUS_BAR_CONTENT: String = std::string::String::new();
 
 pub fn change_status_bar_content(s: &String) {
     unsafe { STATUS_BAR_CONTENT = s.to_string() };
 }
+
+// 保存双击时第一次点击的路径，方便和第二次比较
+static mut SELECT_ITEM_PATH: String = std::string::String::new();
 
 #[derive(Copy, Clone)]
 pub enum Message {
@@ -66,7 +70,7 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
     // 组件初始化
     let flex = group::Flex::default()
         .with_pos(5, 5)
-        .with_size(root.width() - 10, root.height() - 35)
+        .with_size(root.width() - 10, root.height() - 40)
         .row();
 
         let left_flex = group::Flex::default()
@@ -78,13 +82,30 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
             buffer.file_system.set_connector_color(enums::Color::Red.inactive());
             buffer.file_system.set_show_root(false);
             buffer.file_system.set_callback_reason(tree::TreeReason::Selected);
-            buffer.file_system.set_callback(|t| {
-                if let Some(items) = t.get_selected_items() {
-                    for item in items {
-                        let p = t.item_pathname(&item).unwrap();
-                        println!("Open File: {}", p);
-                        open::that(p).unwrap();
+            // 手动模拟双击
+            // 选中以及再次按下
+            buffer.file_system.handle(|t, event| {
+                match event {
+                    Event::Released => {
+                        if let Some(items) = t.get_selected_items() {
+                            for item in items {
+                                let p = t.item_pathname(&item).unwrap();
+                                if unsafe { SELECT_ITEM_PATH.eq(&p) } {
+                                    println!("Open Item: {}", p);
+                                    open::that(p).unwrap();
+                                } else {
+                                    println!("Select Item: {}", p);
+                                    unsafe { SELECT_ITEM_PATH = p };
+                                }
+                            }
+                        }
+                        true
+                    },
+                    Event::Unfocus => {
+                        unsafe { SELECT_ITEM_PATH.clear() };
+                        true
                     }
+                    _ => false
                 }
             });
 
@@ -119,18 +140,18 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
 
             year_flex.end();
 
-
             let mut start_bt = button::Button::default()
                 .with_label("Start Download");
             start_bt.set_color(Color::White);
             start_bt.emit(buffer.sender, Message::Start);
+
 
         right_flex.end();
 
     flex.end();
 
     buffer.status_bar = output::Output::default()
-        .with_size(root.width() - 10, 20)
+        .with_size(root.width() - 10, 25)
         .with_pos(5, flex.height() + 10);
 
     root.end();
