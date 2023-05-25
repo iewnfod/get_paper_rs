@@ -1,11 +1,14 @@
 use fltk::{prelude::*};
 use std::collections::HashMap;
 
+use crate::ui::change_status_bar_content;
+
 use super::{Buffer, data};
 
 pub async fn start(buffer: Buffer) -> () {
     let min_year: isize = buffer.min_year_input.value().parse().unwrap();
     let max_year: isize = buffer.max_year_input.value().parse().unwrap();
+    println!("From {} to {}", min_year, max_year);
     let check_bts = buffer.check_bts.clone();
     for (bt, code, name) in check_bts {
         if bt.value() {
@@ -14,6 +17,7 @@ pub async fn start(buffer: Buffer) -> () {
                 println!("{}", year);
                 for season in data::SEASONS {
                     println!("{}", season);
+                    change_status_bar_content(&format!("Searching: {} | {} | {}", &name, year, &season));
                     let available_files =
                         search_file(&code, year.to_string().as_str(), season).await;
 
@@ -22,14 +26,19 @@ pub async fn start(buffer: Buffer) -> () {
                     if available_files["status"] == 0 {
                         let files_value = &available_files["data"];
                         if let Some(files) = files_value.as_array() {
-                            for i in files.iter(){
+                            for i in files.iter() {
                                 let file_name = i[0].to_string();
                                 let file_name = file_name[1..file_name.len()-1].to_string();
                                 println!("{}", file_name);
                                 let mut url = data::FETCH_URL.to_string();
                                 url.push_str(&file_name.as_str());
                                 let save_path = format!("{}/{}/{}/{}", data::SAVE_DIR, &name, year, file_name);
-                                download(&url, &save_path).await;
+                                change_status_bar_content(&format!("Downloading: {}", &save_path));
+                                let mut status = download(&url, &save_path).await;
+                                while !status {
+                                    println!("Retry: {}", save_path);
+                                    status = download(&url, &save_path).await;
+                                }
                             }
                         }
                     }
@@ -60,23 +69,33 @@ async fn search_file(subject: &str, year: &str, season: &str) -> serde_json::Val
     return result;
 }
 
-async fn download(url: &String, save_path: &String) {
+async fn download(url: &String, save_path: &String) -> bool {
     // 创建文件以及其存在的目录
     let path = std::path::Path::new(save_path);
     if path.exists() {
-        return ;
+        return true;
     }
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).unwrap();
 
     // 发送请求，获取文件
-    let result = reqwest::get(url)
-        .await
-        .unwrap()
-        .bytes()
+    let response = reqwest::get(url)
         .await
         .unwrap();
 
-    // 写入文件
-    std::fs::write(path, result).unwrap();
+    println!("{} : {}", save_path, response.status());
+
+    // 判断是否成功
+    if response.status().is_success() {
+        let result = response.bytes()
+        .await
+        .unwrap();
+
+        // 写入文件
+        std::fs::write(path, result).unwrap();
+        return true;
+
+    } else {
+        return false;
+    }
 }

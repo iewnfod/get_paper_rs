@@ -3,6 +3,12 @@ use fltk::{prelude::*, *, enums::Color};
 pub mod data;
 pub mod network;
 
+pub static mut STATUS_BAR_CONTENT: String = std::string::String::new();
+
+pub fn change_status_bar_content(s: &String) {
+    unsafe { STATUS_BAR_CONTENT = s.to_string() };
+}
+
 #[derive(Copy, Clone)]
 pub enum Message {
     Start
@@ -13,6 +19,7 @@ pub struct Buffer {
     pub check_bts: Vec<(button::CheckButton, String, String)>,  // [bt, code, label]
     pub min_year_input: input::IntInput,
     pub max_year_input: input::IntInput,
+    pub status_bar: output::Output,
     file_system: tree::Tree,
     sender: app::Sender<Message>
 }
@@ -24,18 +31,38 @@ impl Buffer {
             min_year_input: input::IntInput::default(),
             max_year_input: input::IntInput::default(),
             file_system: tree::Tree::default(),
+            status_bar: output::Output::default(),
             sender: sender
         }
     }
 
-    pub fn refresh_file_system(&mut self) {
-        self.file_system.clear();
-        for f_result in walkdir::WalkDir::new(data::SAVE_DIR) {
+    pub fn refresh_file_system(&mut self, root_path: &str) {
+        // self.file_system.clear();
+        for f_result in walkdir::WalkDir::new(root_path) {
             let f = f_result.unwrap();
             if f.file_name() == ".DS_Store" {
                 continue;
             }
             self.file_system.add(f.path().to_str().unwrap());
+        }
+    }
+
+    pub fn remove_file_system_node(&mut self, node_path: &str) {
+        let items = self.file_system.get_items().unwrap();
+        for item in items {
+            if self.file_system.item_pathname(&item).unwrap() == node_path {
+                self.file_system.remove(&item).unwrap();
+            }
+        }
+    }
+
+    pub fn close_all_nodes(&mut self) {
+        let nodes = self.file_system.get_items().unwrap();
+        for mut node in nodes {
+            if node.is_root() || node.label().unwrap() == data::SAVE_DIR {
+                continue;
+            }
+            node.close();
         }
     }
 }
@@ -48,7 +75,7 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
     // 组件初始化
     let flex = group::Flex::default()
         .with_pos(5, 5)
-        .with_size(root.width() - 10, root.height() - 10)
+        .with_size(root.width() - 10, root.height() - 35)
         .row();
 
         let left_flex = group::Flex::default()
@@ -94,8 +121,7 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
 
                 let mut mid_label = output::Output::default();
                 mid_label.set_value("to");
-                mid_label.set_frame(enums::FrameType::NoBox);
-                mid_label.set_readonly(true);
+                mid_label.set_frame(enums::FrameType::FlatBox);
 
                 buffer.max_year_input = input::IntInput::default();
                 buffer.max_year_input.set_value("2022");
@@ -112,9 +138,14 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
 
     flex.end();
 
+    buffer.status_bar = output::Output::default()
+        .with_size(root.width() - 10, 20)
+        .with_pos(5, flex.height() + 10);
+
     root.end();
 
-    buffer.refresh_file_system();
+    buffer.refresh_file_system(data::SAVE_DIR);
+    buffer.close_all_nodes();
     buffer
 
 }
