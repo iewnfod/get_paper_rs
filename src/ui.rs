@@ -61,7 +61,8 @@ pub fn close_all_nodes(file_system: &mut tree::Tree) {
 
 #[derive(Copy, Clone)]
 pub enum Message {
-    Start
+    Start,
+    Stop
 }
 
 #[derive(Clone)]
@@ -170,11 +171,20 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> (
 
             year_flex.end();
 
-            let mut start_bt = button::Button::default()
-                .with_label("Start Download");
-            start_bt.set_color(Color::White);
-            start_bt.emit(buffer.sender, Message::Start);
+            let bts_flex = group::Flex::default()
+                .row();
 
+                let mut start_bt = button::Button::default()
+                    .with_label("Start");
+                start_bt.set_color(Color::White);
+                start_bt.emit(buffer.sender, Message::Start);
+
+                let mut stop_bt = button::Button::default()
+                    .with_label("Stop");
+                stop_bt.set_color(Color::White);
+                stop_bt.emit(buffer.sender, Message::Stop);
+
+            bts_flex.end();
 
         right_flex.end();
 

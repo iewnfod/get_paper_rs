@@ -48,6 +48,8 @@ async fn main() {
                             check_bts.push((bt.value(), code.clone(), name.clone()));
                         }
 
+                        ui::change_status_bar_content(&"Start!".to_string());
+
                         tokio::spawn( async move {
                             println!("Spawn Start");
 
@@ -58,6 +60,13 @@ async fn main() {
                         });
                     } else {
                         println!("Last download have not finished. Please try again after it is finished. ");
+                    }
+                },
+                Message::Stop => {
+                    if unsafe { DOWNLOADING } {
+                        println!("Trying to stop. ");
+                        ui::change_status_bar_content(&"Trying to stop".to_string());
+                        unsafe { DOWNLOADING = false };
                     }
                 }
             }

@@ -1,4 +1,3 @@
-use fltk::{prelude::*};
 use rand::Rng;
 use tokio::process::Command;
 use std::collections::HashMap;
@@ -8,6 +7,15 @@ use crate::ui::change_status_bar_content;
 use super::data;
 
 pub static mut DOWNLOADING: bool = false;
+
+fn should_stop() -> bool {
+    if unsafe { !DOWNLOADING } {
+        change_status_bar_content(&"Stopped".to_string());
+        true
+    } else {
+        false
+    }
+}
 
 pub async fn start(min_year: isize, max_year: isize, check_bts: Vec<(bool, String, String)>) -> () {
     println!("Function Start");
@@ -23,12 +31,14 @@ pub async fn start(min_year: isize, max_year: isize, check_bts: Vec<(bool, Strin
                     let available_files =
                         search_file(&code, year.to_string().as_str(), season).await;
 
-                    println!("{}", available_files);
+                    // println!("{}", available_files);
 
                     if available_files["status"] == 0 {
                         let files_value = &available_files["data"];
                         if let Some(files) = files_value.as_array() {
                             for i in files.iter() {
+                                // 如果 downloading 被改成 false 了，表示他要停止了
+                                if should_stop() { return ; }
                                 let file_name = i[0].to_string();
                                 let file_name = file_name[1..file_name.len()-1].to_string();
                                 println!("{}", file_name);
@@ -85,6 +95,7 @@ async fn search_file(subject: &str, year: &str, season: &str) -> serde_json::Val
 }
 
 async fn download(url: &String, save_path: &String) -> bool {
+    if should_stop() { return true; }
     // 创建文件以及其存在的目录
     let path = std::path::Path::new(save_path);
     if path.exists() {
@@ -98,7 +109,7 @@ async fn download(url: &String, save_path: &String) -> bool {
         .await
         .unwrap();
 
-    println!("{} : {}", save_path, response.status());
+    // println!("{} : {}", save_path, response.status());
 
     // 判断是否成功
     if response.status().is_success() {
