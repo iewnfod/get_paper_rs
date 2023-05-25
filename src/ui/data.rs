@@ -48,3 +48,5 @@ pub const SEASONS: &[&str] = &[
 ];
 
 pub const SAVE_DIR: &str = "PastPapers";
+
+pub const DOUBLE_CLICK_INTERVAL: f32 = 0.5;  // 秒为单位

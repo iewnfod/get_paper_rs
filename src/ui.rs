@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{str::FromStr, time};
 
 use fltk::{prelude::*, *, enums::{Color, Event}};
 
@@ -14,7 +14,13 @@ pub fn change_status_bar_content(s: &String) {
 
 // 保存双击时第一次点击的路径，方便和第二次比较
 static mut SELECT_ITEM_PATH: String = std::string::String::new();
+static mut DOUBLE_CLICK_TIMER_VEC: Vec<time::Instant> = vec![];
 
+fn double_click_status_clear() {
+    unsafe { DOUBLE_CLICK_TIMER_VEC.clear() };
+    unsafe { SELECT_ITEM_PATH.clear() };
+    println!("Lose Item.");
+}
 
 pub fn refresh_file_system(file_system: &mut tree::Tree, root_path: &str) {
     // self.file_system.clear();
@@ -114,26 +120,33 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> (
                     Event::Released => {
                         if let Some(items) = t.get_selected_items() {
                             if items.is_empty() {
-                                // 如果是空的，那就直接清除 select item path
-                                unsafe { SELECT_ITEM_PATH.clear() };
-                                println!("Lose Item.");
+                                // 如果是空的，那就直接清除
+                                double_click_status_clear();
                             }
                             for item in items {
                                 let p = t.item_pathname(&item).unwrap();
                                 if unsafe { SELECT_ITEM_PATH.eq(&p) } {
-                                    println!("Open Item: {}", p);
-                                    open::that(p).unwrap();
+                                    // 判断计时器是否超过时间限制
+                                    let duration = unsafe { DOUBLE_CLICK_TIMER_VEC.last() }.unwrap().elapsed();
+                                    let interval_duration = time::Duration::from_secs_f32(data::DOUBLE_CLICK_INTERVAL);
+                                    // 如果间隔时间小于等于 interval，才能打开
+                                    if duration <= interval_duration {
+                                        println!("Open Item: {}", p);
+                                        open::that(p).unwrap();
+                                    }
+                                    double_click_status_clear();
                                 } else {
                                     println!("Select Item: {}", p);
                                     unsafe { SELECT_ITEM_PATH = p };
+                                    // 添加一个计时器
+                                    unsafe { DOUBLE_CLICK_TIMER_VEC.push(time::Instant::now()) };
                                 }
                             }
                         }
                         true
                     },
                     Event::Unfocus | Event::Deactivate => {
-                        unsafe { SELECT_ITEM_PATH.clear() };
-                        println!("Lose Item.");
+                        double_click_status_clear();
                         true
                     }
                     _ => false
