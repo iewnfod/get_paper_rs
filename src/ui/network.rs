@@ -5,19 +5,19 @@ use std::collections::HashMap;
 
 use crate::ui::change_status_bar_content;
 
-use super::{Buffer, data};
+use super::data;
 
-pub async fn start(buffer: Buffer) -> () {
-    let min_year: isize = buffer.min_year_input.value().parse().unwrap();
-    let max_year: isize = buffer.max_year_input.value().parse().unwrap();
+pub static mut DOWNLOADING: bool = false;
+
+pub async fn start(min_year: isize, max_year: isize, check_bts: Vec<(bool, String, String)>) -> () {
+    println!("Function Start");
     println!("From {} to {}", min_year, max_year);
-    let check_bts = buffer.check_bts.clone();
-    for (bt, code, name) in check_bts {
-        if bt.value() {
+    for (bt, code, name) in check_bts.iter() {
+        if *bt {
             println!("{}", code);
             for year in min_year..max_year+1 {
                 println!("{}", year);
-                for season in data::SEASONS {
+                for season in data::SEASONS.iter() {
                     println!("{}", season);
                     change_status_bar_content(&format!("Searching: {} | {} | {}", &name, year, &season));
                     let available_files =
@@ -37,11 +37,10 @@ pub async fn start(buffer: Buffer) -> () {
                                 let save_path = format!("{}/{}/{}/{}", data::SAVE_DIR, &name, year, file_name);
                                 change_status_bar_content(&format!("Downloading: {}", &save_path));
                                 let mut status = download(&url, &save_path).await;
-                                sleep().await;
                                 while !status {
+                                    sleep().await;
                                     println!("Retry: {}", save_path);
                                     status = download(&url, &save_path).await;
-                                    sleep().await;
                                 }
                             }
                         }
@@ -50,10 +49,13 @@ pub async fn start(buffer: Buffer) -> () {
             }
         }
     }
+    println!("Finish");
+    change_status_bar_content(&"Finish".to_string());
+    // return ;
 }
 
 async fn sleep() {
-    let sleep_time: isize = rand::thread_rng().gen_range(1..3);
+    let sleep_time: isize = rand::thread_rng().gen_range(1..5);
     let mut waiter = Command::new("sleep")
         .arg(sleep_time.to_string())
         .spawn()

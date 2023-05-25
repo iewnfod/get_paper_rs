@@ -1,7 +1,6 @@
-use fltk::prelude::*;
-use ui::Message;
+use fltk::{prelude::*};
+use ui::{Message, network::*};
 mod ui;
-
 
 // main
 #[tokio::main]
@@ -15,14 +14,12 @@ async fn main() {
     let mut app = fltk::app::App::default();
     app.set_scheme(fltk::app::Scheme::Gtk);
     let (sender, receiver) = fltk::app::channel::<ui::Message>();
-    let mut root = fltk::window::Window::new(50, 50, 850, 950, "Main Window");
+    let mut root = fltk::window::Window::new(100, 100, 850, 950, "Get CAIE Paper");
     root.resizable(&root);
 
-    let mut buffer: ui::Buffer = ui::add_widgets(&mut root, sender);
+    let (mut buffer, mut file_system) = ui::add_widgets(&mut root, sender);
 
     root.show();
-
-    let mut handlers: Vec<tokio::task::JoinHandle<()>> = vec![];
 
     // app.run().unwrap();
 
@@ -32,32 +29,39 @@ async fn main() {
         buffer.status_bar.set_value(unsafe { &ui::STATUS_BAR_CONTENT });
 
         // 刷新文件系统
-        buffer.refresh_file_system(ui::data::SAVE_DIR);
-
-        // 查看是否还有下载在运行
-        let mut handle_flag = true;
-        for handle in handlers.iter() {
-            if !handle.is_finished() {  // 如果没有停止，就是 false
-                handle_flag = false;
-            }
-        }
-        if handle_flag {  // 如果还是 true 的话，那就清楚 status bar
-            ui::change_status_bar_content(&std::string::String::new());
-        }
+        ui::refresh_file_system(&mut file_system, ui::data::SAVE_DIR);
 
         if let Some(msg) = receiver.recv() {
             match msg {
                 Message::Start => {
-                    let buffer_clone = buffer.clone();
-                    println!("Start");
+                    if unsafe { !DOWNLOADING } {
+                        println!("Start");
 
-                    handlers.push(
-                        tokio::spawn( async {
-                            ui::network::start(buffer_clone).await;
-                        })
-                    );
+                        unsafe { DOWNLOADING = true };
+
+                        // 对数据进行预处理
+                        let min_year: isize = buffer.min_year_input.value().parse().unwrap();
+                        let max_year: isize = buffer.max_year_input.value().parse().unwrap();
+                        let check_bts_vec = buffer.check_bts.clone();
+                        let mut check_bts = vec![];
+                        for (bt, code, name) in check_bts_vec.iter() {
+                            check_bts.push((bt.value(), code.clone(), name.clone()));
+                        }
+
+                        tokio::spawn( async move {
+                            println!("Spawn Start");
+
+                            start(min_year, max_year, check_bts).await;
+                            unsafe { DOWNLOADING = false };
+                            println!("Spawn Finish");
+                            // return ;
+                        });
+                    } else {
+                        println!("Last download have not finished. Please try again after it is finished. ");
+                    }
                 }
             }
         }
     }
+
 }
