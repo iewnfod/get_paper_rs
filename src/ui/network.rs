@@ -118,9 +118,9 @@ async fn download(url: &String, save_path: &String) -> bool {
 
         // 写入文件
         std::fs::write(path, result).unwrap();
-        return true;
 
+        true
     } else {
-        return false;
+        false
     }
 }
