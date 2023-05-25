@@ -14,7 +14,7 @@ async fn main() {
     let mut app = fltk::app::App::default();
     app.set_scheme(fltk::app::Scheme::Gtk);
     let (sender, receiver) = fltk::app::channel::<ui::Message>();
-    let mut root = fltk::window::Window::new(100, 100, 850, 950, "Get CAIE Paper");
+    let mut root = fltk::window::Window::new(0, 0, 850, 950, "Get CAIE Paper");
     root.resizable(&root);
 
     let (mut buffer, mut file_system) = ui::add_widgets(&mut root, sender);
