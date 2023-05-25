@@ -121,7 +121,7 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
 
 
             let mut start_bt = button::Button::default()
-                .with_label("Start");
+                .with_label("Start Download");
             start_bt.set_color(Color::White);
             start_bt.emit(buffer.sender, Message::Start);
 
