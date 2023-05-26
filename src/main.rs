@@ -75,6 +75,13 @@ async fn main() {
                         ui::change_status_bar_content(&"Trying to stop".to_string());
                         unsafe { DOWNLOADING = false };
                     }
+                },
+                Message::Open => {
+                    println!("Open");
+                    let items = file_system.get_selected_items().unwrap();
+                    for item in items {
+                        open::that(file_system.item_pathname(&item).unwrap()).unwrap();
+                    }
                 }
             }
         }

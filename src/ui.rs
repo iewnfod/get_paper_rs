@@ -1,6 +1,6 @@
 use std::{str::FromStr, time};
 
-use fltk::{prelude::*, *, enums::{Color, Event}};
+use fltk::{prelude::*, *, enums::{Color, Event, Shortcut}};
 
 pub mod data;
 pub mod network;
@@ -69,7 +69,8 @@ pub fn close_all_nodes(file_system: &mut tree::Tree) {
 #[derive(Copy, Clone)]
 pub enum Message {
     Start,
-    Stop
+    Stop,
+    Open
 }
 
 #[derive(Clone)]
@@ -97,6 +98,31 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> (
     let mut buffer = Buffer::new(sender);
     // 窗口初始化
     root.set_color(Color::White);
+
+    // 菜单栏初始化
+    let mut menubar = menu::SysMenuBar::default();
+    menubar.add_emit(
+        "File/Open\t",
+        Shortcut::Command.union(Shortcut::from_char('o')),
+        menu::MenuFlag::Normal,
+        sender,
+        Message::Open
+    );
+    menubar.add_emit(
+        "Operation/Start\t",
+        Shortcut::Command.union(Shortcut::from_char('s')),
+        menu::MenuFlag::Normal,
+        sender,
+        Message::Start
+    );
+    menubar.add_emit(
+        "Operation/Stop\t",
+        Shortcut::Command.union(Shortcut::Shift).union(Shortcut::from_char('s')),
+        menu::MenuFlag::Normal,
+        sender,
+        Message::Stop
+    );
+
 
     // 组件初始化
     let flex = group::Flex::default()
