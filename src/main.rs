@@ -18,7 +18,7 @@ async fn main() {
         .center_screen();
     root.resizable(&root);
 
-    let (mut buffer, mut file_system) = ui::add_widgets(&mut root, sender);
+    let mut buffer= ui::add_widgets(&mut root, sender);
 
     root.show();
 
@@ -30,7 +30,7 @@ async fn main() {
         buffer.status_bar.set_value(unsafe { &ui::STATUS_BAR_CONTENT });
 
         // 刷新文件系统
-        ui::refresh_file_system(&mut file_system);
+        buffer.refresh_file_system();
 
         if let Some(msg) = receiver.recv() {
             match msg {
@@ -72,9 +72,9 @@ async fn main() {
                 },
                 Message::Open => {
                     // println!("Open");
-                    if let Some(items) = file_system.get_selected_items() {
+                    if let Some(items) = buffer.file_system.get_selected_items() {
                         for item in items {
-                            open::that(file_system.item_pathname(&item).unwrap()).unwrap();
+                            open::that(buffer.file_system.item_pathname(&item).unwrap()).unwrap();
                         }
                     }
                 }
