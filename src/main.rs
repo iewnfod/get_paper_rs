@@ -2,6 +2,10 @@ use fltk::{prelude::*};
 use ui::{Message, network::*};
 mod ui;
 
+// jemalloc 优化
+#[global_allocator]
+static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+
 // main
 #[tokio::main]
 async fn main() {

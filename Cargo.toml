@@ -1,7 +1,12 @@
 [package]
 name = "get_paper_rs"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -16,3 +21,4 @@ walkdir = "2.3.3"
 open = "*"
 fltk-grid = "0.3.1"
 rand = "0.8.5"
+jemallocator = "0.3.2"
