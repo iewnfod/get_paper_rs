@@ -23,9 +23,13 @@ fn double_click_status_clear() {
     // println!("Lose Item.");
 }
 
-pub fn refresh_file_system(file_system: &mut tree::Tree, root_path: &str) {
+pub fn refresh_file_system(file_system: &mut tree::Tree) {
     // self.file_system.clear();
-    for f_result in walkdir::WalkDir::new(root_path) {
+    // 如果不存在，那就创建
+    if !std::path::PathBuf::from_str(data::SAVE_DIR).unwrap().exists() {
+        std::fs::create_dir(data::SAVE_DIR).unwrap();
+    }
+    for f_result in walkdir::WalkDir::new(data::SAVE_DIR) {
         let f = f_result.unwrap();
         if f.file_name() == ".DS_Store" {
             continue;
@@ -236,7 +240,7 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> (
 
     root.end();
 
-    refresh_file_system(&mut file_system, data::SAVE_DIR);
+    refresh_file_system(&mut file_system);
     close_all_nodes(&mut file_system);
 
     (buffer, file_system)

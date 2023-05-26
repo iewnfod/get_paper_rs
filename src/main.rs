@@ -9,12 +9,6 @@ static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
 // main
 #[tokio::main]
 async fn main() {
-    // 初始化一些东西
-    let save_path = std::path::Path::new(ui::data::SAVE_DIR);
-    if !save_path.exists() {
-        std::fs::create_dir(ui::data::SAVE_DIR).unwrap();
-    }
-
     let mut app = fltk::app::App::default();
     app.set_scheme(fltk::app::Scheme::Gtk);
     let (sender, receiver) = fltk::app::channel::<ui::Message>();
@@ -36,7 +30,7 @@ async fn main() {
         buffer.status_bar.set_value(unsafe { &ui::STATUS_BAR_CONTENT });
 
         // 刷新文件系统
-        ui::refresh_file_system(&mut file_system, ui::data::SAVE_DIR);
+        ui::refresh_file_system(&mut file_system);
 
         if let Some(msg) = receiver.recv() {
             match msg {
