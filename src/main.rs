@@ -71,10 +71,11 @@ async fn main() {
                     }
                 },
                 Message::Open => {
-                    println!("Open");
-                    let items = file_system.get_selected_items().unwrap();
-                    for item in items {
-                        open::that(file_system.item_pathname(&item).unwrap()).unwrap();
+                    // println!("Open");
+                    if let Some(items) = file_system.get_selected_items() {
+                        for item in items {
+                            open::that(file_system.item_pathname(&item).unwrap()).unwrap();
+                        }
                     }
                 }
             }
