@@ -1,6 +1,6 @@
 use std::{str::FromStr, io::{Read}};
 
-use fltk::{prelude::*, dialog};
+use fltk::{prelude::*, dialog, enums};
 use ui::{Message, network::*};
 mod ui;
 
@@ -19,10 +19,25 @@ async fn main() {
     app.set_scheme(fltk::app::Scheme::Gtk);
     let (sender, receiver) = fltk::app::channel::<ui::Message>();
     let mut root = fltk::window::Window::default()
-        .with_size(850, 950)
-        .with_label("Get CAIE Paper")
-        .center_screen();
+        .with_size(unsafe {ui::data::WIDTH}, unsafe {ui::data::HEIGHT})
+        .center_screen()
+        .with_label("Get CAIE Paper");
     root.resizable(&root);
+    root.handle({
+        move |w, event| {
+            match event {
+                enums::Event::Resize => {
+                    unsafe {
+                        ui::data::WIDTH = w.width();
+                        ui::data::HEIGHT = w.height();
+                    };
+                    refresh_config_content(false);
+                    true
+                }
+                _ => false
+            }
+        }
+    });
 
     let mut buffer= ui::add_widgets(&mut root, sender);
 
@@ -128,7 +143,15 @@ fn refresh_config_content(init: bool) {
 }
 
 fn generate_config_content() -> String {
-    let content = format!("save_dir={}", ui::data::get_save_dir());
+    let content = format!(
+"save_dir={}
+width={}
+height={}",
+        ui::data::get_save_dir(),
+        unsafe {ui::data::WIDTH},
+        unsafe {ui::data::HEIGHT}
+    );
+
     content
 }
 
@@ -151,13 +174,19 @@ fn init() {
     let config_content: Vec<&str> = config_content.trim().split('\n').collect();
     for item in config_content.iter() {
         let item_data: Vec<&str> = item.split('=').collect();
-        let key = item_data[0];
-        let value = item_data[1];
+        let key = item_data[0].trim();
+        let value = item_data[1].trim();
 
         match key {
             "save_dir" => {
                 unsafe { ui::data::SAVE_DIR = Some(value.to_string()) };
             },
+            "width" => {
+                unsafe { ui::data::WIDTH = value.parse().unwrap() };
+            },
+            "height" => {
+                unsafe { ui::data::HEIGHT = value.parse().unwrap() };
+            }
             _ => {}
         }
 
