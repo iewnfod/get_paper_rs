@@ -119,8 +119,11 @@ impl Buffer {
 
     pub fn close_all_nodes(&mut self) {
         let nodes = self.file_system.get_items().unwrap();
+        let save_path = data::get_save_dir();
+        let check_path: Vec<&str> = save_path.split('/').collect();
+        let check_name = check_path[check_path.len() - 1];
         for mut node in nodes {
-            if node.is_root() || node.label().unwrap() == data::get_save_dir() {
+            if node.is_root() || node.label().unwrap() == check_name {
                 continue;
             }
             node.close();
