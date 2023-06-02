@@ -27,7 +27,8 @@ fn double_click_status_clear() {
 pub enum Message {
     Start,
     Stop,
-    Open
+    Open,
+    ChangeSavePath,
 }
 
 #[derive(Clone)]
@@ -37,6 +38,7 @@ pub struct Buffer {
     pub max_year_input: input::IntInput,
     pub status_bar: output::Output,
     pub file_system: tree::Tree,
+    pub save_path_bt: button::Button,
     sender: app::Sender<Message>
 }
 
@@ -48,6 +50,7 @@ impl Buffer {
             max_year_input: input::IntInput::default(),
             status_bar: output::Output::default(),
             file_system: tree::Tree::default(),
+            save_path_bt: button::Button::default(),
             sender: sender
         }
     }
@@ -56,22 +59,47 @@ impl Buffer {
     pub fn refresh_file_system(&mut self) {
         // self.file_system.clear();
         // 如果不存在，那就创建
-        if !std::path::PathBuf::from_str(data::SAVE_DIR).unwrap().exists() {
-            std::fs::create_dir(data::SAVE_DIR).unwrap();
+        if !std::path::PathBuf::from_str( data::get_save_dir().as_str() ).unwrap().exists() {
+            std::fs::create_dir(data::get_save_dir()).unwrap();
         }
-        for f_result in walkdir::WalkDir::new(data::SAVE_DIR) {
+
+        // 判断目录级别
+        let save_path = data::get_save_dir();
+        let index = save_path.split('/').collect::<Vec<&str>>().len() - 1;
+
+        for f_result in walkdir::WalkDir::new(data::get_save_dir()) {
             let f = f_result.unwrap();
             if f.file_name() == ".DS_Store" {
                 continue;
             }
-            self.file_system.add(f.path().to_str().unwrap());
+            let p = f.path().to_str().unwrap().to_string();
+            let p: Vec<&str> = p.split('/').collect();
+            let mut final_path = String::new();
+            for (i, s) in p.iter().enumerate() {
+                if i >= index {
+                    final_path.push_str(s);
+                    if i != p.len() - 1 {
+                        // 如果不是最后一个，那就加上一个斜杠
+                        final_path.push('/');
+                    }
+                }
+            }
+            self.file_system.add(&final_path);
         }
 
         // 检查，去除掉已经被删除的目录或文件
         let items = self.file_system.get_items().unwrap();
+        let save_path = save_path.split('/').collect::<Vec<&str>>();
+        let mut check_path = String::new();
+        for i in 0..index {
+            check_path.push_str(save_path[i]);
+            check_path.push('/');
+        }
         let mut need_to_remove = vec![];
         for item in items {
-            let p = self.file_system.item_pathname(&item).unwrap();
+            let mut p = String::new();
+            p.push_str(&check_path);
+            p.push_str(&self.file_system.item_pathname(&item).unwrap());
             let path = std::path::PathBuf::from_str(&p).unwrap();
             if !path.exists() && !p.is_empty() {
                 // println!("Remove: {}", &p);
@@ -92,7 +120,7 @@ impl Buffer {
     pub fn close_all_nodes(&mut self) {
         let nodes = self.file_system.get_items().unwrap();
         for mut node in nodes {
-            if node.is_root() || node.label().unwrap() == data::SAVE_DIR {
+            if node.is_root() || node.label().unwrap() == data::get_save_dir() {
                 continue;
             }
             node.close();
@@ -167,7 +195,16 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
                                     // 如果间隔时间小于等于 interval，才能打开
                                     if duration <= interval_duration {
                                         // println!("Open Item: {}", p);
-                                        open::that(p).unwrap();
+                                        // 转化路径，在前面添加基础路径
+                                        let path = data::get_save_dir();
+                                        let split_path = path.split('/').collect::<Vec<&str>>();
+                                        let mut final_p = String::new();
+                                        for i in 0..split_path.len()-1 {
+                                            final_p.push_str(&split_path[i]);
+                                            final_p.push('/');
+                                        }
+                                        final_p.push_str(&p);
+                                        open::that(final_p).unwrap();
                                     }
                                     double_click_status_clear();
                                 } else {
@@ -218,6 +255,12 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
                 buffer.max_year_input.set_value("2022");
 
             year_flex.end();
+
+            // 修改保存路径的按钮
+            buffer.save_path_bt = button::Button::default()
+                .with_label( format!("Save Path: {}", data::get_save_dir()).as_str() );
+            buffer.save_path_bt.emit(buffer.sender, Message::ChangeSavePath);
+            buffer.save_path_bt.set_color(Color::White);
 
             let bts_flex = group::Flex::default()
                 .row();

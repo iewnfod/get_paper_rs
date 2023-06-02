@@ -44,7 +44,7 @@ pub async fn start(min_year: isize, max_year: isize, check_bts: Vec<(bool, Strin
                                 // println!("{}", file_name);
                                 let mut url = data::FETCH_URL.to_string();
                                 url.push_str(&file_name.as_str());
-                                let save_path = format!("{}/{}/{}/{}", data::SAVE_DIR, &name, year, file_name);
+                                let save_path = format!("{}/{}/{}/{}", data::get_save_dir(), &name, year, file_name);
                                 change_status_bar_content(&format!("Downloading: {}", &save_path));
                                 let mut status = download(&url, &save_path).await;
                                 while !status {

@@ -47,6 +47,10 @@ pub const SEASONS: &[&str] = &[
     "Gen"
 ];
 
-pub const SAVE_DIR: &str = "PastPapers";
+pub static mut SAVE_DIR: Option<String> = None;
+pub fn get_save_dir() -> String {
+    let p = unsafe { SAVE_DIR.clone() };
+    p.unwrap()
+}
 
 pub const DOUBLE_CLICK_INTERVAL: f32 = 0.5;  // 秒为单位
