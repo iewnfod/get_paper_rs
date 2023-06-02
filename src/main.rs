@@ -1,3 +1,5 @@
+use std::{str::FromStr, io::{Read}};
+
 use fltk::{prelude::*, dialog};
 use ui::{Message, network::*};
 mod ui;
@@ -10,8 +12,9 @@ static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
 #[tokio::main]
 async fn main() {
     // 初始化
-    unsafe { ui::data::SAVE_DIR = Some("PastPapers".to_string()) };
+    init();
 
+    // 软件运行
     let mut app = fltk::app::App::default();
     app.set_scheme(fltk::app::Scheme::Gtk);
     let (sender, receiver) = fltk::app::channel::<ui::Message>();
@@ -91,6 +94,10 @@ async fn main() {
                             unsafe {
                                 ui::data::SAVE_DIR = Some(dir_path.to_str().unwrap().to_string());
                             };
+
+                            // 修改配置文件
+                            refresh_config_content(false);
+
                             buffer.save_path_bt.set_label(format!("Save Path: {}", ui::data::get_save_dir()).as_str());
                             buffer.refresh_file_system();
                             buffer.close_all_nodes();
@@ -105,4 +112,54 @@ async fn main() {
         }
     }
 
+}
+
+// init 表示是否是初始化时的调用，如果是，那就不会进行根据现有内容写入的操作
+fn refresh_config_content(init: bool) {
+    let config_path = format!("{}/{}", ui::data::BASE_DIR, ui::data::CONFIG_PATH);
+    let config = std::path::Path::new(&config_path);
+    // 如果不存在，并且需要初始化，那才需要写入默认数值
+    if !config.exists() && init {
+        std::fs::write(config, ui::data::DEFAULT_CONFIG_CONTENT).unwrap();
+    } else if !init {
+        // 否则，一律生成设置文本并写入
+        std::fs::write(config, generate_config_content()).unwrap();
+    }
+}
+
+fn generate_config_content() -> String {
+    let content = format!("save_dir={}", ui::data::get_save_dir());
+    content
+}
+
+fn init() {
+    // 尝试读取设置
+    let base = std::path::PathBuf::from_str( ui::data::BASE_DIR ).unwrap();
+    // 如果保存路径不存在，那就创建
+    if !base.exists() {
+        std::fs::create_dir_all(ui::data::BASE_DIR).unwrap();
+    }
+
+    // 设置路径
+    refresh_config_content(true);
+
+    // 加载设置
+    let config_path = format!("{}/{}", ui::data::BASE_DIR, ui::data::CONFIG_PATH);
+    let mut config_file = std::fs::File::open(config_path).unwrap();
+    let mut config_content = String::new();
+    config_file.read_to_string(&mut config_content).unwrap();
+    let config_content: Vec<&str> = config_content.trim().split('\n').collect();
+    for item in config_content.iter() {
+        let item_data: Vec<&str> = item.split('=').collect();
+        let key = item_data[0];
+        let value = item_data[1];
+
+        match key {
+            "save_dir" => {
+                unsafe { ui::data::SAVE_DIR = Some(value.to_string()) };
+            },
+            _ => {}
+        }
+
+    }
 }

@@ -47,6 +47,8 @@ pub const SEASONS: &[&str] = &[
     "Gen"
 ];
 
+pub const BASE_DIR: &str = "Library/Containers/get-paper-rs";
+pub const CONFIG_PATH: &str = "config.txt";
 pub static mut SAVE_DIR: Option<String> = None;
 pub fn get_save_dir() -> String {
     let p = unsafe { SAVE_DIR.clone() };
@@ -54,3 +56,7 @@ pub fn get_save_dir() -> String {
 }
 
 pub const DOUBLE_CLICK_INTERVAL: f32 = 0.5;  // 秒为单位
+
+pub const DEFAULT_CONFIG_CONTENT: &str = "
+save_dir=PastPapers
+";
