@@ -38,7 +38,7 @@ pub struct Buffer {
     pub max_year_input: input::IntInput,
     pub status_bar: output::Output,
     pub file_system: tree::Tree,
-    pub save_path_bt: button::Button,
+    pub save_path_output: output::Output,
     sender: app::Sender<Message>
 }
 
@@ -50,7 +50,7 @@ impl Buffer {
             max_year_input: input::IntInput::default(),
             status_bar: output::Output::default(),
             file_system: tree::Tree::default(),
-            save_path_bt: button::Button::default(),
+            save_path_output: output::Output::default(),
             sender: sender
         }
     }
@@ -166,7 +166,7 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
     // 组件初始化
     let flex = group::Flex::default()
         .with_pos(5, 5)
-        .with_size(root.width() - 10, root.height() - 40)
+        .with_size(root.width() - 10, root.height() - 70)
         .row();
 
         let left_flex = group::Flex::default()
@@ -259,12 +259,6 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
 
             year_flex.end();
 
-            // 修改保存路径的按钮
-            buffer.save_path_bt = button::Button::default()
-                .with_label( format!("Save Path: {}", data::get_save_dir()).as_str() );
-            buffer.save_path_bt.emit(buffer.sender, Message::ChangeSavePath);
-            buffer.save_path_bt.set_color(Color::White);
-
             let bts_flex = group::Flex::default()
                 .row();
 
@@ -284,9 +278,25 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
 
     flex.end();
 
-    buffer.status_bar = output::Output::default()
+
+    let save_path_group = group::Row::default()
         .with_size(root.width() - 10, 25)
         .with_pos(5, flex.height() + 10);
+
+    // 修改保存路径的按钮
+        buffer.save_path_output = output::Output::default();
+        buffer.save_path_output.set_value( format!("Save Path: {}", data::get_save_dir()).as_str() );
+        let mut save_path_bt = button::Button::default()
+            .with_label( "Change Save Path" )
+            .with_size(10, 25);
+        save_path_bt.emit(buffer.sender, Message::ChangeSavePath);
+        save_path_bt.set_color(Color::White);
+
+    save_path_group.end();
+
+    buffer.status_bar = output::Output::default()
+        .with_size(root.width() - 10, 25)
+        .with_pos(5, flex.height() + 40);
 
     root.end();
 

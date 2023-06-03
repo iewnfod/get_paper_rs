@@ -113,7 +113,7 @@ async fn main() {
                             // 修改配置文件
                             refresh_config_content(false);
 
-                            buffer.save_path_bt.set_label(format!("Save Path: {}", ui::data::get_save_dir()).as_str());
+                            buffer.save_path_output.set_value(format!("Save Path: {}", ui::data::get_save_dir()).as_str());
                             buffer.refresh_file_system();
                             buffer.close_all_nodes();
                             ui::change_status_bar_content(&format!("Change save path to {:?} successfully.", &dir_path));
