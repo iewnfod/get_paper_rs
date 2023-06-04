@@ -68,7 +68,13 @@ impl Buffer {
         let index = save_path.split('/').collect::<Vec<&str>>().len() - 1;
 
         for f_result in walkdir::WalkDir::new(data::get_save_dir()) {
-            let f = f_result.unwrap();
+            let f = match f_result {
+                Ok(k) => k,
+                Err(m) => {
+                    self.file_system_to_default(m.to_string());
+                    return ;
+                }
+            };
             if f.file_name() == ".DS_Store" {
                 continue;
             }
@@ -101,9 +107,9 @@ impl Buffer {
             p.push_str(&check_path);
             p.push_str(match &self.file_system.item_pathname(&item) {
                 Ok(k) => k,
-                Err(_) => {
+                Err(e) => {
                     // 如果出错，那就恢复默认，并退出
-                    self.file_system_to_default();
+                    self.file_system_to_default(e.to_string());
                     return ;
                 }
             });
@@ -138,14 +144,14 @@ impl Buffer {
         }
     }
 
-    pub fn file_system_to_default(&mut self) {
-        change_status_bar_content(&"Some error occurs when changing save path: change to default save path.".to_string());
+    pub fn file_system_to_default(&mut self, message: String) {
+        change_status_bar_content(&format!("Error: `{}` occurs when changing save path.", &message));
         self.file_system.clear();
-        // 修改到默认路径
-        unsafe { data::SAVE_DIR = Some(data::DEFAULT_SAVE_DIR.to_string()); };
-        // 修改保存文本内容
-        super::refresh_config_content(false);
+        // 重新加载保存路径，也就是重新初始化
+        super::init();
         self.save_path_output.set_value(&format!("Save Path: {}", data::get_save_dir()));
+        // 刷新文件树
+        self.refresh_file_system();
     }
 
 }

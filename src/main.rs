@@ -105,21 +105,20 @@ async fn main() {
                     let dir_path = dir_dialog.filename();
                     if dir_path.exists() {
                         if dir_path.is_dir() {
-                            ui::change_status_bar_content(&format!("Change save path to {:?}.", &dir_path));
+                            ui::change_status_bar_content(&format!("Changing save path to {:?}.", &dir_path));
 
                             // 如果他是一个目录，那就修改
                             unsafe {
                                 ui::data::SAVE_DIR = Some(dir_path.to_str().unwrap().to_string());
                             };
 
-                            // 修改配置文件
-                            refresh_config_content(false);
-
                             buffer.save_path_output.set_value(format!("Save Path: {}", ui::data::get_save_dir()).as_str());
                             // 清空文件树，并刷新
                             buffer.file_system.clear();
                             buffer.refresh_file_system();
                             buffer.close_all_nodes();
+                            // 修改配置文件
+                            refresh_config_content(false);
                         } else if dir_path.is_file() {
                             ui::change_status_bar_content(&format!("{:?} is not a directory.", &dir_path));
                         }
