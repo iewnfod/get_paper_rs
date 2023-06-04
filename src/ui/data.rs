@@ -47,7 +47,7 @@ pub const SEASONS: &[&str] = &[
     "Gen"
 ];
 
-pub const BASE_DIR: &str = "Library/Containers/get-paper-rs";
+pub const BASE_DIR: &str = "Library/Application Support/get-paper-rs";
 pub const CONFIG_PATH: &str = "config.txt";
 pub static mut SAVE_DIR: Option<String> = None;
 const DEFAULT_SAVE_DIR: &str = "PastPapers";
