@@ -99,7 +99,14 @@ impl Buffer {
         for item in items {
             let mut p = String::new();
             p.push_str(&check_path);
-            p.push_str(&self.file_system.item_pathname(&item).unwrap());
+            p.push_str(match &self.file_system.item_pathname(&item) {
+                Ok(k) => k,
+                Err(_) => {
+                    // 如果出错，那就恢复默认，并退出
+                    self.file_system_to_default();
+                    return ;
+                }
+            });
             let path = std::path::PathBuf::from_str(&p).unwrap();
             if !path.exists() && !p.is_empty() {
                 // println!("Remove: {}", &p);
@@ -118,18 +125,28 @@ impl Buffer {
     }
 
     pub fn close_all_nodes(&mut self) {
-        let nodes = self.file_system.get_items().unwrap();
-        let save_path = data::get_save_dir();
-        let check_path: Vec<&str> = save_path.split('/').collect();
-        let check_name = check_path[check_path.len() - 1];
-        for mut node in nodes {
-            if node.is_root() || node.label().unwrap() == check_name {
-                continue;
+        if let Some(nodes) = self.file_system.get_items() {
+            let save_path = data::get_save_dir();
+            let check_path: Vec<&str> = save_path.split('/').collect();
+            let check_name = check_path[check_path.len() - 1];
+            for mut node in nodes {
+                if node.is_root() || node.label().unwrap() == check_name {
+                    continue;
+                }
+                node.close();
             }
-            node.close();
         }
     }
 
+    pub fn file_system_to_default(&mut self) {
+        change_status_bar_content(&"Some error occurs when changing save path: change to default save path.".to_string());
+        self.file_system.clear();
+        // 修改到默认路径
+        unsafe { data::SAVE_DIR = Some(data::DEFAULT_SAVE_DIR.to_string()); };
+        // 修改保存文本内容
+        super::refresh_config_content(false);
+        self.save_path_output.set_value(&format!("Save Path: {}", data::get_save_dir()));
+    }
 
 }
 

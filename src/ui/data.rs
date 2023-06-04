@@ -50,7 +50,7 @@ pub const SEASONS: &[&str] = &[
 pub const BASE_DIR: &str = "Library/Application Support/get-paper-rs";
 pub const CONFIG_PATH: &str = "config.txt";
 pub static mut SAVE_DIR: Option<String> = None;
-const DEFAULT_SAVE_DIR: &str = "PastPapers";
+pub const DEFAULT_SAVE_DIR: &str = "PastPapers";
 pub fn get_save_dir() -> String {
     let p = unsafe { SAVE_DIR.clone() };
     match p {
