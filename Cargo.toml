@@ -2,11 +2,18 @@
 name = "get_paper_rs"
 version = "0.3.2"
 edition = "2021"
+description = "An application to download CAIE past papers"
 
 [profile.release]
 lto = "fat"
 codegen-units = 1
 
+# cargo bundle --release
+[package.metadata.bundle]
+name = "get_paper_rs"
+identifier = "com.get-paper-rs.muyunxi"
+copyright = "Copyright (c) Mu Yunxi 2023. All rights reserved"
+resources = []
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
