@@ -43,6 +43,8 @@ async fn main() {
 
     root.show();
 
+    let mut download_threads: Vec<tokio::task::JoinHandle<()>> = vec![];
+
     while app.wait() {
         app.redraw();
         // 刷新状态栏
@@ -65,6 +67,12 @@ async fn main() {
             };
         }
 
+        // 查看下载是否还在进行
+        if !download_threads.is_empty() && download_threads.first().unwrap().is_finished() {
+            download_threads.clear();
+            unsafe { DOWNLOADING = false };
+        }
+
 
         if let Some(msg) = receiver.recv() {
             match msg {
@@ -82,17 +90,20 @@ async fn main() {
                         for (bt, code, name) in check_bts_vec.iter() {
                             check_bts.push((bt.value(), code.clone(), name.clone()));
                         }
+                        println!("Check buttons: {:?}", check_bts);
 
                         ui::change_status_bar_content(&"Start!".to_string());
 
-                        tokio::spawn( async move {
-                            println!("Spawn Start");
+                        download_threads.push(
+                            tokio::spawn( async move {
+                                println!("Spawn Start");
 
-                            start(min_year, max_year, check_bts).await;
-                            unsafe { DOWNLOADING = false };
-                            println!("Spawn Finish");
-                            // return ;
-                        });
+                                start(min_year, max_year, check_bts).await;
+                                unsafe { DOWNLOADING = false };
+                                println!("Spawn Finish");
+                                // return ;
+                            })
+                        )
                     } else {
                         ui::change_status_bar_content(&"Last download has not finished. Please try again after it is finished. ".to_string());
                     }
