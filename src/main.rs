@@ -12,7 +12,7 @@ static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
 #[tokio::main]
 async fn main() {
     // 初始化
-    init();
+    let mut watcher = init();
 
     // 软件运行
     let mut app = fltk::app::App::default();
@@ -43,15 +43,28 @@ async fn main() {
 
     root.show();
 
-    // app.run().unwrap();
-
     while app.wait() {
         app.redraw();
         // 刷新状态栏
         buffer.status_bar.set_value(unsafe { &ui::STATUS_BAR_CONTENT });
 
         // 刷新文件系统
-        buffer.refresh_file_system();
+        if unsafe { ui::IF_SAVE_DIR_CONTENT_CHANGE } {
+            match buffer.refresh_file_system() {
+                Ok(_) => (),
+                Err(new_watcher) => {
+                    watcher = new_watcher;
+                }
+            };
+            if unsafe { ui::IF_SAVE_DIR_CHANGE } {
+                buffer.close_all_nodes();
+            }
+            unsafe {
+                ui::IF_SAVE_DIR_CONTENT_CHANGE = false;
+                ui::IF_SAVE_DIR_CHANGE = false;
+            };
+        }
+
 
         if let Some(msg) = receiver.recv() {
             match msg {
@@ -81,7 +94,7 @@ async fn main() {
                             // return ;
                         });
                     } else {
-                        println!("Last download have not finished. Please try again after it is finished. ");
+                        ui::change_status_bar_content(&"Last download has not finished. Please try again after it is finished. ".to_string());
                     }
                 },
                 Message::Stop => {
@@ -108,14 +121,17 @@ async fn main() {
                             ui::change_status_bar_content(&format!("Changing save path to {:?}.", &dir_path));
 
                             // 如果他是一个目录，那就修改
-                            unsafe {
-                                ui::data::SAVE_DIR = Some(dir_path.to_str().unwrap().to_string());
-                            };
+                            ui::change_save_path(&mut watcher, dir_path.to_str().unwrap());
 
                             buffer.save_path_output.set_value(format!("Save Path: {}", ui::data::get_save_dir()).as_str());
                             // 清空文件树，并刷新
                             buffer.file_system.clear();
-                            buffer.refresh_file_system();
+                            match buffer.refresh_file_system() {
+                                Ok(_) => (),
+                                Err(new_watcher) => {
+                                    watcher = new_watcher;
+                                }
+                            };
                             buffer.close_all_nodes();
                             // 修改配置文件
                             refresh_config_content(false);
@@ -157,7 +173,9 @@ height={}",
     content
 }
 
-fn init() {
+fn init() -> hotwatch::Hotwatch {
+    // 创建监视
+    let mut watcher = hotwatch::Hotwatch::new().unwrap();
     // 尝试读取设置
     let base = std::path::PathBuf::from_str( ui::data::BASE_DIR ).unwrap();
     // 如果保存路径不存在，那就创建
@@ -181,7 +199,7 @@ fn init() {
 
         match key {
             "save_dir" => {
-                unsafe { ui::data::SAVE_DIR = Some(value.to_string()) };
+                ui::change_save_path(&mut watcher, value);
             },
             "width" => {
                 unsafe { ui::data::WIDTH = value.parse().unwrap() };
@@ -191,6 +209,7 @@ fn init() {
             }
             _ => {}
         }
-
     }
+
+    watcher
 }

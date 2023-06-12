@@ -9,7 +9,10 @@ pub mod network;
 pub static mut STATUS_BAR_CONTENT: String = std::string::String::new();
 
 pub fn change_status_bar_content(s: &String) {
-    unsafe { STATUS_BAR_CONTENT = s.to_string() };
+    let mut value = String::new();
+    value.push_str(" ");
+    value.push_str(s);
+    unsafe { STATUS_BAR_CONTENT = value };
     println!("{}", s);
 }
 
@@ -56,7 +59,7 @@ impl Buffer {
     }
 
 
-    pub fn refresh_file_system(&mut self) {
+    pub fn refresh_file_system(&mut self) -> Result<(), hotwatch::Hotwatch> {
         // self.file_system.clear();
         // 如果不存在，那就创建
         if !std::path::PathBuf::from_str( data::get_save_dir().as_str() ).unwrap().exists() {
@@ -71,8 +74,7 @@ impl Buffer {
             let f = match f_result {
                 Ok(k) => k,
                 Err(m) => {
-                    self.file_system_to_default(m.to_string());
-                    return ;
+                    return Err(self.file_system_to_default(m.to_string()));
                 }
             };
             if f.file_name() == ".DS_Store" {
@@ -109,8 +111,7 @@ impl Buffer {
                 Ok(k) => k,
                 Err(e) => {
                     // 如果出错，那就恢复默认，并退出
-                    self.file_system_to_default(e.to_string());
-                    return ;
+                    return Err(self.file_system_to_default(e.to_string()));
                 }
             });
             let path = std::path::PathBuf::from_str(&p).unwrap();
@@ -128,6 +129,7 @@ impl Buffer {
                 self.file_system.remove(&remove_item).unwrap();
             }
         }
+        return Ok(());
     }
 
     pub fn close_all_nodes(&mut self) {
@@ -144,14 +146,15 @@ impl Buffer {
         }
     }
 
-    pub fn file_system_to_default(&mut self, message: String) {
+    pub fn file_system_to_default(&mut self, message: String) -> hotwatch::Hotwatch {
         change_status_bar_content(&format!("Error: `{}` occurs when changing save path.", &message));
         self.file_system.clear();
         // 重新加载保存路径，也就是重新初始化
-        super::init();
+        let watcher = super::init();
+
         self.save_path_output.set_value(&format!("Save Path: {}", data::get_save_dir()));
         // 刷新文件树
-        self.refresh_file_system();
+        return watcher;
     }
 
 }
@@ -274,7 +277,7 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
                 buffer.min_year_input.set_value("2022");
 
                 let mut mid_label = output::Output::default();
-                mid_label.set_value("to");
+                mid_label.set_value(" to");
                 mid_label.set_frame(enums::FrameType::FlatBox);
 
                 buffer.max_year_input = input::IntInput::default();
@@ -323,8 +326,37 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
 
     root.end();
 
-    buffer.refresh_file_system();
+    buffer.refresh_file_system().unwrap();
     buffer.close_all_nodes();
 
     buffer
+}
+
+// 文件内容是否被修改
+pub static mut IF_SAVE_DIR_CONTENT_CHANGE: bool = false;
+pub static mut IF_SAVE_DIR_CHANGE: bool = false;
+// 修改保存路径
+pub fn change_save_path(watcher: &mut hotwatch::Hotwatch, path: &str) {
+    let last_path = data::get_save_dir();
+    // 修改路径
+    unsafe {
+        data::SAVE_DIR = Some(path.to_string());
+    }
+    // 修改监听路径
+    match watcher.unwatch(last_path) {
+        Ok(_) => (),
+        Err(_) => ()
+    };
+    println!("Start to watch: {}", data::get_save_dir());
+    watcher.watch(data::get_save_dir(), |e: hotwatch::Event| {
+        println!("{:?}", e);
+        unsafe {
+            IF_SAVE_DIR_CONTENT_CHANGE = true;
+        };
+    }).unwrap();
+
+    unsafe {
+        IF_SAVE_DIR_CHANGE = true;
+        IF_SAVE_DIR_CONTENT_CHANGE = true;
+    };
 }
