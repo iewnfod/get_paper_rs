@@ -271,7 +271,7 @@ dependencies = [
 
 [[package]]
 name = "get_paper_rs"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "fltk",
  "fltk-grid",
