@@ -1,4 +1,4 @@
-use std::{str::FromStr, io::{Read}};
+use std::{io::{Read}};
 
 use fltk::{prelude::*, dialog, enums};
 use ui::{Message, network::*};
@@ -160,11 +160,11 @@ async fn main() {
 
 // init 表示是否是初始化时的调用，如果是，那就不会进行根据现有内容写入的操作
 fn refresh_config_content(init: bool) {
-    let config_path = format!("{}/{}", ui::data::BASE_DIR, ui::data::CONFIG_PATH);
+    let config_path = ui::data::base_dir().join(ui::data::CONFIG_PATH);
     let config = std::path::Path::new(&config_path);
     // 如果不存在，并且需要初始化，那才需要写入默认数值
     if !config.exists() && init {
-        std::fs::write(config, ui::data::DEFAULT_CONFIG_CONTENT).unwrap();
+        std::fs::write(config, ui::data::default_config_content()).unwrap();
     } else if !init {
         // 否则，一律生成设置文本并写入
         std::fs::write(config, generate_config_content()).unwrap();
@@ -188,17 +188,17 @@ fn init() -> hotwatch::Hotwatch {
     // 创建监视
     let mut watcher = hotwatch::Hotwatch::new().unwrap();
     // 尝试读取设置
-    let base = std::path::PathBuf::from_str( ui::data::BASE_DIR ).unwrap();
+    let base = ui::data::base_dir();
     // 如果保存路径不存在，那就创建
     if !base.exists() {
-        std::fs::create_dir_all(ui::data::BASE_DIR).unwrap();
+        std::fs::create_dir_all(ui::data::base_dir()).unwrap();
     }
 
     // 设置路径
     refresh_config_content(true);
 
     // 加载设置
-    let config_path = format!("{}/{}", ui::data::BASE_DIR, ui::data::CONFIG_PATH);
+    let config_path = ui::data::base_dir().join(ui::data::CONFIG_PATH);
     let mut config_file = std::fs::File::open(config_path).unwrap();
     let mut config_content = String::new();
     config_file.read_to_string(&mut config_content).unwrap();

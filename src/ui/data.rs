@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf};
+
 pub const KINDS: &[&str] = &[
     "0413 - Physical Education (IGCSE)",
     "0450 - Business Studies (IGCSE)",
@@ -47,7 +49,16 @@ pub const SEASONS: &[&str] = &[
     "Gen"
 ];
 
-pub const BASE_DIR: &str = "Library/Application Support/get-paper-rs";
+pub fn base_dir() -> PathBuf {
+    if cfg!(target_os = "windows") {
+        Path::new("AppData\\Local\\get-paper-rs").to_path_buf()
+    } else if cfg!(target_os = "macos") {
+        Path::new("Library/Application Support/get-paper-rs").to_path_buf()
+    } else {
+        Path::new("get-paper-rs").to_path_buf()
+    }
+}
+
 pub const CONFIG_PATH: &str = "config.txt";
 pub static mut SAVE_DIR: Option<String> = None;
 pub const DEFAULT_SAVE_DIR: &str = "PastPapers";
@@ -61,10 +72,13 @@ pub fn get_save_dir() -> String {
 
 pub const DOUBLE_CLICK_INTERVAL: f32 = 0.5;  // 秒为单位
 
-pub const DEFAULT_CONFIG_CONTENT: &str =
-"save_dir=PastPapers
-width=850
-height=950";
+pub fn default_config_content() -> String {
+    format!("
+    save_dir={}
+    width=850
+    height=950
+    ", DEFAULT_SAVE_DIR)
+}
 
 pub static mut WIDTH: i32 = 850;
 pub static mut HEIGHT: i32 = 950;

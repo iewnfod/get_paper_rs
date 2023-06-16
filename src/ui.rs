@@ -62,15 +62,15 @@ impl Buffer {
     pub fn refresh_file_system(&mut self) -> Result<(), hotwatch::Hotwatch> {
         // self.file_system.clear();
         // 如果不存在，那就创建
-        if !std::path::PathBuf::from_str( data::get_save_dir().as_str() ).unwrap().exists() {
-            std::fs::create_dir(data::get_save_dir()).unwrap();
+        let save_path = data::get_save_dir();
+        if !std::path::PathBuf::from_str( &save_path.as_str() ).unwrap().exists() {
+            std::fs::create_dir( &save_path ).unwrap();
         }
 
         // 判断目录级别
-        let save_path = data::get_save_dir();
         let index = save_path.split('/').collect::<Vec<&str>>().len() - 1;
 
-        for f_result in walkdir::WalkDir::new(data::get_save_dir()) {
+        for f_result in walkdir::WalkDir::new(&save_path) {
             let f = match f_result {
                 Ok(k) => k,
                 Err(m) => {

@@ -3,3 +3,4 @@
 An application to get CAIE papers.
 
 Only support MacOS now.
+Trying to support Windows.
