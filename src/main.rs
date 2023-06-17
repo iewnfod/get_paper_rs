@@ -192,8 +192,8 @@ fn refresh_config_content(init: bool) {
 }
 
 fn generate_config_content() -> String {
-    let content = format!(
-"save_dir={}
+    let content = format!("
+save_dir={}
 width={}
 height={}",
         ui::data::get_save_dir(),

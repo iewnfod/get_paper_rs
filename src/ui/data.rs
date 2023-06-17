@@ -82,10 +82,9 @@ pub const DOUBLE_CLICK_INTERVAL: f32 = 0.5;  // 秒为单位
 pub fn default_config_content() -> String {
     unsafe {
         format!("
-            save_dir={}
-            width={}
-            height={}
-            ",
+save_dir={}
+width={}
+height={}",
             WIDTH,
             HEIGHT,
             get_default_save_dir()
