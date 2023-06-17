@@ -8,5 +8,5 @@ An application to get CAIE papers.
 
 ## Rust
 Rust Version:
-* MacOS: rustc 1.69.0 (84c898d65 2023-04-16)
-* Windows: rustc 1.70.0 (90c541806 2023-05-31)
+* MacOS: rustc 1.69.0 stable-aarch64-apple-darwin
+* Windows: rustc 1.70.0 stable-x86_64-pc-windows-msvc
