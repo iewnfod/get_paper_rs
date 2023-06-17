@@ -32,6 +32,7 @@ pub enum Message {
     Stop,
     Open,
     ChangeSavePath,
+    ResetSavePath,
 }
 
 #[derive(Clone)]
@@ -304,14 +305,20 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
         .with_size(root.width() - 10, 25)
         .with_pos(5, flex.height() + 10);
 
-    // 修改保存路径的按钮
+        // 修改保存路径的按钮
         buffer.save_path_output = output::Output::default();
         buffer.save_path_output.set_value( format!("Save Path: {}", data::get_save_dir()).as_str() );
-        let mut save_path_bt = button::Button::default()
-            .with_label( "Change Save Path" )
-            .with_size(10, 25);
-        save_path_bt.emit(buffer.sender, Message::ChangeSavePath);
-        save_path_bt.set_color(Color::White);
+
+        let change_path_bt_flex = group::Row::default();
+            let mut save_path_bt = button::Button::default()
+                .with_label( "Change Save Path" );
+            save_path_bt.emit(buffer.sender, Message::ChangeSavePath);
+            save_path_bt.set_color(Color::White);
+            let mut reset_bt = button::Button::default()
+                .with_label("Reset Save Path");
+            reset_bt.emit(buffer.sender, Message::ResetSavePath);
+            reset_bt.set_color(Color::White);
+        change_path_bt_flex.end();
 
     save_path_group.end();
 

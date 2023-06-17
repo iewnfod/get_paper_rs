@@ -136,7 +136,7 @@ async fn main() {
                             // 如果他是一个目录，那就修改
                             ui::change_save_path(&mut watcher, dir_path.to_str().unwrap());
 
-                            buffer.save_path_output.set_value(format!("Save Path: {}", ui::data::get_save_dir()).as_str());
+                            buffer.save_path_output.set_value(format!(" Save Path: {}", ui::data::get_save_dir()).as_str());
                             // 清空文件树，并刷新
                             buffer.file_system.clear();
                             match buffer.refresh_file_system() {
@@ -152,6 +152,24 @@ async fn main() {
                             ui::change_status_bar_content(&format!("{:?} is not a directory.", &dir_path));
                         }
                     }
+                },
+
+                Message::ResetSavePath => {
+                    let default_path = ui::data::get_default_save_dir();
+                    ui::change_save_path(&mut watcher, &default_path);
+                    buffer.save_path_output.set_value(format!(" Save Path: {}", &default_path).as_str());
+
+                    // 清空文件树，并刷新
+                    buffer.file_system.clear();
+                    match buffer.refresh_file_system() {
+                        Ok(_) => (),
+                        Err(new_watcher) => {
+                            watcher = new_watcher;
+                        }
+                    };
+                    buffer.close_all_nodes();
+                    // 修改配置文件
+                    refresh_config_content(false);
                 }
 
             }

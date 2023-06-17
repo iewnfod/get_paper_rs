@@ -73,6 +73,9 @@ pub fn get_save_dir() -> String {
         None => base_dir().join(DEFAULT_SAVE_DIR.to_string()).to_str().unwrap().to_string()
     }
 }
+pub fn get_default_save_dir() -> String {
+    base_dir().join(DEFAULT_SAVE_DIR.to_string()).to_str().unwrap().to_string()
+}
 
 pub const DOUBLE_CLICK_INTERVAL: f32 = 0.5;  // 秒为单位
 
@@ -85,7 +88,7 @@ pub fn default_config_content() -> String {
             ",
             WIDTH,
             HEIGHT,
-            get_save_dir()
+            get_default_save_dir()
         )
     }
 }
