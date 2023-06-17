@@ -1,4 +1,4 @@
-use std::{str::FromStr, time};
+use std::{str::FromStr, time, path::Path};
 
 use fltk::{prelude::*, *, enums::{Color, Event, Shortcut}};
 
@@ -68,7 +68,7 @@ impl Buffer {
         }
 
         // 判断目录级别
-        let index = save_path.split('/').collect::<Vec<&str>>().len() - 1;
+        let index = Path::new(&save_path).parent().unwrap().components().count();
 
         for f_result in walkdir::WalkDir::new(&save_path) {
             let f = match f_result {
@@ -80,13 +80,13 @@ impl Buffer {
             if f.file_name() == ".DS_Store" {
                 continue;
             }
-            let p = f.path().to_str().unwrap().to_string();
-            let p: Vec<&str> = p.split('/').collect();
+            let p = f.path().components();
+            let p_len = p.clone().count();
             let mut final_path = String::new();
-            for (i, s) in p.iter().enumerate() {
+            for (i, s) in p.enumerate() {
                 if i >= index {
-                    final_path.push_str(s);
-                    if i != p.len() - 1 {
+                    final_path.push_str(s.as_os_str().to_str().unwrap());
+                    if i != p_len - 1 {
                         // 如果不是最后一个，那就加上一个斜杠
                         final_path.push('/');
                     }
@@ -97,24 +97,22 @@ impl Buffer {
 
         // 检查，去除掉已经被删除的目录或文件
         let items = self.file_system.get_items().unwrap();
-        let save_path = save_path.split('/').collect::<Vec<&str>>();
-        let mut check_path = String::new();
-        for i in 0..index {
-            check_path.push_str(save_path[i]);
-            check_path.push('/');
+        let save_path_components = Path::new(&save_path).parent().unwrap().components();
+        let mut check_path = Path::new("").to_path_buf();
+        for i in save_path_components {
+            check_path = check_path.join(i);
         }
         let mut need_to_remove = vec![];
         for item in items {
-            let mut p = String::new();
-            p.push_str(&check_path);
-            p.push_str(match &self.file_system.item_pathname(&item) {
+            let i = self.file_system.item_pathname(&item);
+            let p = match i {
                 Ok(k) => k,
                 Err(e) => {
                     // 如果出错，那就恢复默认，并退出
                     return Err(self.file_system_to_default(e.to_string()));
                 }
-            });
-            let path = std::path::PathBuf::from_str(&p).unwrap();
+            };
+            let path = check_path.join(Path::new(&p));
             if !path.exists() && !p.is_empty() {
                 // println!("Remove: {}", &p);
                 need_to_remove.push(item);
@@ -135,8 +133,7 @@ impl Buffer {
     pub fn close_all_nodes(&mut self) {
         if let Some(nodes) = self.file_system.get_items() {
             let save_path = data::get_save_dir();
-            let check_path: Vec<&str> = save_path.split('/').collect();
-            let check_name = check_path[check_path.len() - 1];
+            let check_name = Path::new(&save_path).file_name().unwrap().to_str().unwrap();
             for mut node in nodes {
                 if node.is_root() || node.label().unwrap() == check_name {
                     continue;
@@ -225,14 +222,12 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
                                     if duration <= interval_duration {
                                         // println!("Open Item: {}", p);
                                         // 转化路径，在前面添加基础路径
-                                        let path = data::get_save_dir();
-                                        let split_path = path.split('/').collect::<Vec<&str>>();
-                                        let mut final_p = String::new();
-                                        for i in 0..split_path.len()-1 {
-                                            final_p.push_str(&split_path[i]);
-                                            final_p.push('/');
+                                        let save_path = data::get_save_dir();
+                                        let path = Path::new(&save_path);
+                                        let mut final_p = path.parent().unwrap().to_path_buf();
+                                        for sec in p.split('/') {
+                                            final_p = final_p.join(sec);
                                         }
-                                        final_p.push_str(&p);
                                         open::that(final_p).unwrap();
                                     }
                                     double_click_status_clear();
@@ -347,8 +342,13 @@ pub fn change_save_path(watcher: &mut hotwatch::Hotwatch, path: &str) {
         Ok(_) => (),
         Err(_) => ()
     };
-    println!("Start to watch: {}", data::get_save_dir());
-    watcher.watch(data::get_save_dir(), |e: hotwatch::Event| {
+    let p = data::get_save_dir();
+    if !Path::new(&p).exists() {
+        // 创建路径
+        std::fs::create_dir_all(&p).unwrap();
+    }
+    println!("Start to watch: {}", &p);
+    watcher.watch(&p, |e: hotwatch::Event| {
         println!("{:?}", e);
         unsafe {
             IF_SAVE_DIR_CONTENT_CHANGE = true;

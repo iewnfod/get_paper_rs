@@ -1,12 +1,12 @@
-use std::{io::{Read}};
+use std::{io::{Read}, path::Path};
 
 use fltk::{prelude::*, dialog, enums};
 use ui::{Message, network::*};
 mod ui;
 
-// jemalloc 优化
-#[global_allocator]
-static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+// jemalloc 优化 (已删除，编译警告未测试，并且编译失败)
+// #[global_allocator]
+// static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 // main
 #[tokio::main]
@@ -118,8 +118,10 @@ async fn main() {
                 Message::Open => {
                     // println!("Open");
                     if let Some(items) = buffer.file_system.get_selected_items() {
+                        let save_path = Path::new(&ui::data::get_save_dir()).parent().unwrap().to_path_buf();
                         for item in items {
-                            open::that(buffer.file_system.item_pathname(&item).unwrap()).unwrap();
+                            let item_path = Path::new(&buffer.file_system.item_pathname(&item).unwrap()).to_path_buf();
+                            open::that(save_path.clone().join(&item_path)).unwrap();
                         }
                     }
                 },

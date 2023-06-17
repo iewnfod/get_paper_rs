@@ -1,6 +1,6 @@
 use rand::Rng;
 use tokio::process::Command;
-use std::collections::HashMap;
+use std::{collections::HashMap, path::Path};
 
 use crate::ui::change_status_bar_content;
 
@@ -44,7 +44,11 @@ pub async fn start(min_year: isize, max_year: isize, check_bts: Vec<(bool, Strin
                                 // println!("{}", file_name);
                                 let mut url = data::FETCH_URL.to_string();
                                 url.push_str(&file_name.as_str());
-                                let save_path = format!("{}/{}/{}/{}", data::get_save_dir(), &name, year, file_name);
+                                let save_path = Path::new(&data::get_save_dir())
+                                    .join(name)
+                                    .join(year.to_string())
+                                    .join(&file_name)
+                                    .to_str().unwrap().to_string();
                                 change_status_bar_content(&format!("Downloading: {}", &save_path));
                                 let mut status = download(&url, &save_path).await;
                                 while !status {

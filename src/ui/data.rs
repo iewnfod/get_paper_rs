@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::{path::{Path, PathBuf}};
 
 pub const KINDS: &[&str] = &[
     "0413 - Physical Education (IGCSE)",
@@ -50,10 +50,14 @@ pub const SEASONS: &[&str] = &[
 ];
 
 pub fn base_dir() -> PathBuf {
-    if cfg!(target_os = "windows") {
-        Path::new("AppData\\Local\\get-paper-rs").to_path_buf()
-    } else if cfg!(target_os = "macos") {
-        Path::new("Library/Application Support/get-paper-rs").to_path_buf()
+    if let Some(home) = dirs::home_dir() {
+        if cfg!(target_os = "windows") {
+            return home.join("AppData\\Local\\get-paper-rs").to_path_buf();
+        } else if cfg!(target_os = "macos") {
+            return home.join("Library/Application Support/get-paper-rs").to_path_buf();
+        } else {
+            return home.join("get-paper-rs").to_path_buf();
+        }
     } else {
         Path::new("get-paper-rs").to_path_buf()
     }
@@ -66,19 +70,25 @@ pub fn get_save_dir() -> String {
     let p = unsafe { SAVE_DIR.clone() };
     match p {
         Some(val) => val,
-        None => DEFAULT_SAVE_DIR.to_string()
+        None => base_dir().join(DEFAULT_SAVE_DIR.to_string()).to_str().unwrap().to_string()
     }
 }
 
 pub const DOUBLE_CLICK_INTERVAL: f32 = 0.5;  // 秒为单位
 
 pub fn default_config_content() -> String {
-    format!("
-    save_dir={}
-    width=850
-    height=950
-    ", DEFAULT_SAVE_DIR)
+    unsafe {
+        format!("
+            save_dir={}
+            width={}
+            height={}
+            ",
+            WIDTH,
+            HEIGHT,
+            get_save_dir()
+        )
+    }
 }
 
-pub static mut WIDTH: i32 = 850;
+pub static mut WIDTH: i32 = 1000;
 pub static mut HEIGHT: i32 = 950;
