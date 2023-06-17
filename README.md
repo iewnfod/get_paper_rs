@@ -1,12 +1,10 @@
 # Get Paper - rust
-An application to download CAIE papers.
-
+***An application to download CAIE papers.***
 
 ## Preview
 | Windows 11 | MacOS |
 | ---------- | ----- |
 | ![](demo/Snipaste_2023-06-17_19-50-19.png) | ![](demo/Xnip2023-06-17_19-32-36.jpg) |
-
 
 ## Platform
 * Support **MacOS** & **Windows** now.
