@@ -85,9 +85,9 @@ pub fn default_config_content() -> String {
 save_dir={}
 width={}
 height={}",
+            get_default_save_dir(),
             WIDTH,
-            HEIGHT,
-            get_default_save_dir()
+            HEIGHT
         )
     }
 }
