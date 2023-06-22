@@ -59,7 +59,6 @@ impl Buffer {
         }
     }
 
-
     pub fn refresh_file_system(&mut self) -> Result<(), hotwatch::Hotwatch> {
         // self.file_system.clear();
         // 如果不存在，那就创建
@@ -98,11 +97,7 @@ impl Buffer {
 
         // 检查，去除掉已经被删除的目录或文件
         let items = self.file_system.get_items().unwrap();
-        let save_path_components = Path::new(&save_path).parent().unwrap().components();
-        let mut check_path = Path::new("").to_path_buf();
-        for i in save_path_components {
-            check_path = check_path.join(i);
-        }
+        let check_path = Path::new(&save_path).parent().unwrap();
         let mut need_to_remove = vec![];
         for item in items {
             let i = self.file_system.item_pathname(&item);
