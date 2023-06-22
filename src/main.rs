@@ -4,10 +4,6 @@ use fltk::{prelude::*, dialog, enums};
 use ui::{Message, network::*};
 mod ui;
 
-// jemalloc 优化 (已删除，编译警告未测试，并且编译失败)
-// #[global_allocator]
-// static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
-
 // main
 #[tokio::main]
 async fn main() {
