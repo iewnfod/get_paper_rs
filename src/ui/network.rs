@@ -8,6 +8,8 @@ use super::data;
 
 pub static mut DOWNLOADING: bool = false;
 
+/// 判断下载是否应该停下，退出当前循环或函数
+/// * return `bool` 表示是否应该停下
 fn should_stop() -> bool {
     if unsafe { !DOWNLOADING } {
         change_status_bar_content(&"Stopped".to_string());
@@ -17,6 +19,11 @@ fn should_stop() -> bool {
     }
 }
 
+/// 异步下载启动函数
+/// * param `min_year: isize` 最小年份，即要从哪一年开始下载
+/// * param `max_year: isize` 最大年份，即最后要下载到哪一年
+/// * param `check_bts: Vec<(bool, String, String)>` 依据所有的选项生成的数组，包含是否选择，以及每个选项的内容
+/// * return `()`
 pub async fn start(min_year: isize, max_year: isize, check_bts: Vec<(bool, String, String)>) -> () {
     println!("Function Start");
     println!("From {} to {}", min_year, max_year);
@@ -74,7 +81,9 @@ pub async fn start(min_year: isize, max_year: isize, check_bts: Vec<(bool, Strin
     // return ;
 }
 
-async fn sleep() {
+/// 暂停当前任务，随机 1 到 5 秒，用于解决发送请求过多
+/// return `()`
+async fn sleep() -> () {
     let sleep_time: isize = rand::thread_rng().gen_range(1..5);
     let mut waiter = Command::new("sleep")
         .arg(sleep_time.to_string())
@@ -83,6 +92,11 @@ async fn sleep() {
     waiter.wait().await.unwrap();
 }
 
+/// 异步搜索文件
+/// * param `subject: &str` 搜索的学科
+/// * param `year: &str` 搜索的年份
+/// * param `season: &str` 搜索的季节
+/// * return `serde_json::Value` 返回Json格式的解析结果，类似于字典的使用
 async fn search_file(subject: &str, year: &str, season: &str) -> serde_json::Value {
     let url = data::SEARCH_URL.to_string();
     let mut map = HashMap::new();
@@ -105,6 +119,10 @@ async fn search_file(subject: &str, year: &str, season: &str) -> serde_json::Val
     return result;
 }
 
+/// 异步下载
+/// * param `url: &String` 目标文件的url地址
+/// * param `save_path: &String` 保存文件的路径
+/// * return `bool` 是否下载成功
 async fn download(url: &String, save_path: &String) -> bool {
     if should_stop() {
         return true;

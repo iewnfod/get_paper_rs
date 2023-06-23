@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+/// 包含所有学科的数组
 pub const KINDS: &[&str] = &[
     "0413 - Physical Education (IGCSE)",
     "0450 - Business Studies (IGCSE)",
@@ -39,11 +40,14 @@ pub const KINDS: &[&str] = &[
     "9990 - Psychology (AS-A2)",
 ];
 
+/// 用于搜索可用试卷的url
 pub const SEARCH_URL: &str = "https://cie.fraft.cn/obj/Fetch/renum";
+/// 用于获取试卷的url
 pub const FETCH_URL: &str = "https://cie.fraft.cn/obj/Fetch/redir/";
-
+/// 所有试卷时间
 pub const SEASONS: &[&str] = &["Jun", "Nov", "Mar", "Gen"];
 
+/// 获取基础路径，也就是设置文件所在的目录
 pub fn base_dir() -> PathBuf {
     if let Some(home) = dirs::home_dir() {
         if cfg!(target_os = "windows") {
@@ -60,9 +64,14 @@ pub fn base_dir() -> PathBuf {
     }
 }
 
+/// 设置文件名称
 pub const CONFIG_PATH: &str = "config.txt";
+/// 文件保存路径
 pub static mut SAVE_DIR: Option<String> = None;
+/// 默认文件保存路径
 pub const DEFAULT_SAVE_DIR: &str = "PastPapers";
+/// 获取文件保存路径
+/// * return `String` 字符串格式的保存目录的绝对路径
 pub fn get_save_dir() -> String {
     let p = unsafe { SAVE_DIR.clone() };
     match p {
@@ -74,6 +83,8 @@ pub fn get_save_dir() -> String {
             .to_string(),
     }
 }
+/// 获取默认保存目录
+/// * return `String` 字符串格式的默认保存目录的绝对路径
 pub fn get_default_save_dir() -> String {
     base_dir()
         .join(DEFAULT_SAVE_DIR.to_string())
@@ -82,8 +93,11 @@ pub fn get_default_save_dir() -> String {
         .to_string()
 }
 
-pub const DOUBLE_CLICK_INTERVAL: f32 = 0.5; // 秒为单位
+/// 双击间隔时间，单位为秒
+pub const DOUBLE_CLICK_INTERVAL: f32 = 0.5;
 
+/// 获取默认设置
+/// * return `String` 默认设置文本内容
 pub fn default_config_content() -> String {
     unsafe {
         format!(
@@ -98,5 +112,7 @@ height={}",
     }
 }
 
+/// 窗口宽度
 pub static mut WIDTH: i32 = 1000;
+/// 窗口高度
 pub static mut HEIGHT: i32 = 950;

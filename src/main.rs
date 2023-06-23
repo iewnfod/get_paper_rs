@@ -185,8 +185,10 @@ async fn main() {
     }
 }
 
-// init 表示是否是初始化时的调用，如果是，那就不会进行根据现有内容写入的操作
-fn refresh_config_content(init: bool) {
+/// 刷新保存内容
+/// * param `init: bool` 是否是在初始化时调用，如果是，则不会根据现有设置进行写入
+/// * return `()`
+fn refresh_config_content(init: bool) -> () {
     let config_path = ui::data::base_dir().join(ui::data::CONFIG_PATH);
     let config = std::path::Path::new(&config_path);
     // 如果不存在，并且需要初始化，那才需要写入默认数值
@@ -198,6 +200,8 @@ fn refresh_config_content(init: bool) {
     }
 }
 
+/// 根据现有设置参数，生成设置文档内容
+/// * return `String` 类型，表示内容
 fn generate_config_content() -> String {
     let content = format!(
         "
@@ -212,6 +216,8 @@ height={}",
     content
 }
 
+/// 初始化函数，将会读取设置内容并且开始监视目标保存路径
+/// * return `hotwatch::Hotwatch` 作为监视器实例
 fn init() -> hotwatch::Hotwatch {
     // 创建监视
     let mut watcher = hotwatch::Hotwatch::new().unwrap();

@@ -9,10 +9,13 @@ use fltk::{
 pub mod data;
 pub mod network;
 
-// 状态栏内容
+/// 状态栏内容
 pub static mut STATUS_BAR_CONTENT: String = std::string::String::new();
 
-pub fn change_status_bar_content(s: &String) {
+/// 修改状态栏内容，在下一次事件循环时渲染
+/// * param `s: &String` 修改为的内容，函数会在字符串前加一个空格来优化效果
+/// * return `()`
+pub fn change_status_bar_content(s: &String) -> () {
     let mut value = String::new();
     value.push_str(" ");
     value.push_str(s);
@@ -20,16 +23,25 @@ pub fn change_status_bar_content(s: &String) {
     println!("{}", s);
 }
 
-// 保存双击时第一次点击的路径，方便和第二次比较
+/// 保存双击时第一次点击的路径，方便和第二次比较
 static mut SELECT_ITEM_PATH: String = std::string::String::new();
+/// 保存点击事件，用于判断两次点击是否是在规定时间内发生，由此判断此次点击是否为双击事件
 static mut DOUBLE_CLICK_TIMER_VEC: Vec<time::Instant> = vec![];
 
-fn double_click_status_clear() {
+/// 清除双击点击的状态缓存，通常在一次点击成功完成后进行
+/// * return `()`
+fn double_click_status_clear() -> () {
     unsafe { DOUBLE_CLICK_TIMER_VEC.clear() };
     unsafe { SELECT_ITEM_PATH.clear() };
     // println!("Lose Item.");
 }
 
+/// 枚举类型 `Message` 用于表示当前所需处理的事件，传递到主事件循环并进行处理
+/// * param `Start` 开始下载
+/// * param `Stop` 停止下载
+/// * param `Open` 打开选中文件
+/// * param `ChangeSavePath` 修改保存路径
+/// * param `ResetSavePath` 将保存路径修改为默认路径
 #[derive(Copy, Clone)]
 pub enum Message {
     Start,
@@ -39,6 +51,14 @@ pub enum Message {
     ResetSavePath,
 }
 
+/// 结构体 `Buffer` 用于储存绝大部分核心功能所需的实例数据，以便在所需时直接读取并使用
+/// * param `check_bts` 所有的试卷选择按钮
+/// * param `min_year_input` 最小年份输入框
+/// * param `max_year_input` 最大年份输入框
+/// * param `status_bar` 状态栏，用于呈现当前正在做的事
+/// * param `file_system` 保存路径的文件树
+/// * param `save_path_output` 保存路径输出框
+/// * param `sender` 用于传递 `Message` 事件到主循环
 #[derive(Clone)]
 pub struct Buffer {
     pub check_bts: Vec<(button::CheckButton, String, String)>, // [bt, code, label]
@@ -51,6 +71,9 @@ pub struct Buffer {
 }
 
 impl Buffer {
+    /// 新建 `Buffer` 实例
+    /// * param `sender: fltk::app::Sender<Message>` 事件信息发送器
+    /// * return `Buffer` 返回实例
     pub fn new(sender: app::Sender<Message>) -> Buffer {
         Buffer {
             check_bts: vec![],
@@ -63,6 +86,10 @@ impl Buffer {
         }
     }
 
+    /// 刷新文件树
+    /// * return `Result<(), hotwatch::Hotwatch>`
+    ///     * 成功: 不回返回东西
+    ///     * 失败: 会自动切换回保存路径并返回新的监视器
     pub fn refresh_file_system(&mut self) -> Result<(), hotwatch::Hotwatch> {
         // self.file_system.clear();
         // 如果不存在，那就创建
@@ -133,7 +160,9 @@ impl Buffer {
         return Ok(());
     }
 
-    pub fn close_all_nodes(&mut self) {
+    /// 关闭所有二级节点，只会展现出根目录和学科名称，以便观看
+    /// * return `()`
+    pub fn close_all_nodes(&mut self) -> () {
         if let Some(nodes) = self.file_system.get_items() {
             let save_path = data::get_save_dir();
             let check_name = Path::new(&save_path).file_name().unwrap().to_str().unwrap();
@@ -146,6 +175,9 @@ impl Buffer {
         }
     }
 
+    /// 将修改文件树到之前的保存路径，通常在 `refresh_file_system` 出错时调用
+    /// * param `message: String` 错误信息
+    /// * return `hotwatch::Hotwatch` 新的监视器
     pub fn file_system_to_default(&mut self, message: String) -> hotwatch::Hotwatch {
         change_status_bar_content(&format!(
             "Error: `{}` occurs when changing save path.",
@@ -162,6 +194,10 @@ impl Buffer {
     }
 }
 
+/// GUI生成主函数，包含了所有的组件的创建，以及事件绑定
+/// * param `root: &mut fltk::window::Window` 组件所在的窗口
+/// * param `sender: fltk::app::Sender<Message>` 事件发送器
+/// * return `Buffer` 包含所有所需用到的组件实例，以便调用
 pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> Buffer {
     let mut buffer = Buffer::new(sender);
     // 窗口初始化
@@ -343,11 +379,16 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
     buffer
 }
 
-// 文件内容是否被修改
+/// 文件内容是否被修改
 pub static mut IF_SAVE_DIR_CONTENT_CHANGE: bool = false;
+/// 文件保存目录是否被修改
 pub static mut IF_SAVE_DIR_CHANGE: bool = false;
-// 修改保存路径
-pub fn change_save_path(watcher: &mut hotwatch::Hotwatch, path: &str) {
+
+/// 修改保存路径
+/// * param `watcher: &mut hotwatch::Hotwatch` 监视器实例引用
+/// * param `path: &str` 新的保存路径
+/// * return `()`
+pub fn change_save_path(watcher: &mut hotwatch::Hotwatch, path: &str) -> () {
     let last_path = data::get_save_dir();
     // 修改路径
     unsafe {
