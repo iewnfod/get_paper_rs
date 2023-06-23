@@ -1,6 +1,10 @@
-use std::{str::FromStr, time, path::Path};
+use std::{path::Path, str::FromStr, time};
 
-use fltk::{prelude::*, *, enums::{Color, Event, Shortcut}};
+use fltk::{
+    enums::{Color, Event, Shortcut},
+    prelude::*,
+    *,
+};
 
 pub mod data;
 pub mod network;
@@ -37,13 +41,13 @@ pub enum Message {
 
 #[derive(Clone)]
 pub struct Buffer {
-    pub check_bts: Vec<(button::CheckButton, String, String)>,  // [bt, code, label]
+    pub check_bts: Vec<(button::CheckButton, String, String)>, // [bt, code, label]
     pub min_year_input: input::IntInput,
     pub max_year_input: input::IntInput,
     pub status_bar: output::Output,
     pub file_system: tree::Tree,
     pub save_path_output: output::Output,
-    sender: app::Sender<Message>
+    sender: app::Sender<Message>,
 }
 
 impl Buffer {
@@ -55,7 +59,7 @@ impl Buffer {
             status_bar: output::Output::default(),
             file_system: tree::Tree::default(),
             save_path_output: output::Output::default(),
-            sender: sender
+            sender: sender,
         }
     }
 
@@ -63,8 +67,11 @@ impl Buffer {
         // self.file_system.clear();
         // 如果不存在，那就创建
         let save_path = data::get_save_dir();
-        if !std::path::PathBuf::from_str( &save_path.as_str() ).unwrap().exists() {
-            std::fs::create_dir( &save_path ).unwrap();
+        if !std::path::PathBuf::from_str(&save_path.as_str())
+            .unwrap()
+            .exists()
+        {
+            std::fs::create_dir(&save_path).unwrap();
         }
 
         // 判断目录级别
@@ -140,16 +147,19 @@ impl Buffer {
     }
 
     pub fn file_system_to_default(&mut self, message: String) -> hotwatch::Hotwatch {
-        change_status_bar_content(&format!("Error: `{}` occurs when changing save path.", &message));
+        change_status_bar_content(&format!(
+            "Error: `{}` occurs when changing save path.",
+            &message
+        ));
         self.file_system.clear();
         // 重新加载保存路径，也就是重新初始化
         let watcher = super::init();
 
-        self.save_path_output.set_value(&format!("Save Path: {}", data::get_save_dir()));
+        self.save_path_output
+            .set_value(&format!("Save Path: {}", data::get_save_dir()));
         // 刷新文件树
         return watcher;
     }
-
 }
 
 pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> Buffer {
@@ -164,23 +174,24 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
         Shortcut::Command.union(Shortcut::from_char('o')),
         menu::MenuFlag::Normal,
         sender,
-        Message::Open
+        Message::Open,
     );
     menubar.add_emit(
         "Operation/Start\t",
         Shortcut::Command.union(Shortcut::from_char('s')),
         menu::MenuFlag::Normal,
         sender,
-        Message::Start
+        Message::Start,
     );
     menubar.add_emit(
         "Operation/Stop\t",
-        Shortcut::Command.union(Shortcut::Shift).union(Shortcut::from_char('s')),
+        Shortcut::Command
+            .union(Shortcut::Shift)
+            .union(Shortcut::from_char('s')),
         menu::MenuFlag::Normal,
         sender,
-        Message::Stop
+        Message::Stop,
     );
-
 
     // 组件初始化
     let flex = group::Flex::default()
@@ -188,132 +199,135 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
         .with_size(root.width() - 10, root.height() - 70)
         .row();
 
-        let left_flex = group::Flex::default()
-            .column();
+    let left_flex = group::Flex::default().column();
 
-            buffer.file_system = tree::Tree::default();
-            buffer.file_system.set_select_mode(tree::TreeSelect::Multi);
-            buffer.file_system.set_connector_style(tree::TreeConnectorStyle::Solid);
-            buffer.file_system.set_connector_color(enums::Color::Red.inactive());
-            buffer.file_system.set_show_root(false);
-            buffer.file_system.set_callback_reason(tree::TreeReason::Selected);
-            buffer.file_system.set_sort_order(tree::TreeSort::Ascending);
-            // 手动模拟双击
-            // 选中以及再次按下
-            buffer.file_system.handle(|t, event| {
-                match event {
-                    Event::Released => {
-                        if let Some(items) = t.get_selected_items() {
-                            if items.is_empty() {
-                                // 如果是空的，那就直接清除
-                                double_click_status_clear();
-                            }
-                            for item in items {
-                                let p = t.item_pathname(&item).unwrap();
-                                if unsafe { SELECT_ITEM_PATH.eq(&p) } {
-                                    // 判断计时器是否超过时间限制
-                                    let duration = unsafe { DOUBLE_CLICK_TIMER_VEC.last() }.unwrap().elapsed();
-                                    let interval_duration = time::Duration::from_secs_f32(data::DOUBLE_CLICK_INTERVAL);
-                                    // 如果间隔时间小于等于 interval，才能打开
-                                    if duration <= interval_duration {
-                                        // println!("Open Item: {}", p);
-                                        // 转化路径，在前面添加基础路径
-                                        let save_path = data::get_save_dir();
-                                        let path = Path::new(&save_path);
-                                        let mut final_p = path.parent().unwrap().to_path_buf();
-                                        for sec in p.split('/') {
-                                            final_p = final_p.join(sec);
-                                        }
-                                        open::that(final_p).unwrap();
-                                    }
-                                    double_click_status_clear();
-                                } else {
-                                    // println!("Select Item: {}", p);
-                                    unsafe { SELECT_ITEM_PATH = p };
-                                    // 添加一个计时器
-                                    unsafe { DOUBLE_CLICK_TIMER_VEC.push(time::Instant::now()) };
-                                }
-                            }
-                        }
-                        true
-                    },
-                    Event::Unfocus | Event::Deactivate => {
+    buffer.file_system = tree::Tree::default();
+    buffer.file_system.set_select_mode(tree::TreeSelect::Multi);
+    buffer
+        .file_system
+        .set_connector_style(tree::TreeConnectorStyle::Solid);
+    buffer
+        .file_system
+        .set_connector_color(enums::Color::Red.inactive());
+    buffer.file_system.set_show_root(false);
+    buffer
+        .file_system
+        .set_callback_reason(tree::TreeReason::Selected);
+    buffer.file_system.set_sort_order(tree::TreeSort::Ascending);
+    // 手动模拟双击
+    // 选中以及再次按下
+    buffer.file_system.handle(|t, event| {
+        match event {
+            Event::Released => {
+                if let Some(items) = t.get_selected_items() {
+                    if items.is_empty() {
+                        // 如果是空的，那就直接清除
                         double_click_status_clear();
-                        true
                     }
-                    _ => false
+                    for item in items {
+                        let p = t.item_pathname(&item).unwrap();
+                        if unsafe { SELECT_ITEM_PATH.eq(&p) } {
+                            // 判断计时器是否超过时间限制
+                            let duration =
+                                unsafe { DOUBLE_CLICK_TIMER_VEC.last() }.unwrap().elapsed();
+                            let interval_duration =
+                                time::Duration::from_secs_f32(data::DOUBLE_CLICK_INTERVAL);
+                            // 如果间隔时间小于等于 interval，才能打开
+                            if duration <= interval_duration {
+                                // println!("Open Item: {}", p);
+                                // 转化路径，在前面添加基础路径
+                                let save_path = data::get_save_dir();
+                                let path = Path::new(&save_path);
+                                let mut final_p = path.parent().unwrap().to_path_buf();
+                                for sec in p.split('/') {
+                                    final_p = final_p.join(sec);
+                                }
+                                open::that(final_p).unwrap();
+                            }
+                            double_click_status_clear();
+                        } else {
+                            // println!("Select Item: {}", p);
+                            unsafe { SELECT_ITEM_PATH = p };
+                            // 添加一个计时器
+                            unsafe { DOUBLE_CLICK_TIMER_VEC.push(time::Instant::now()) };
+                        }
+                    }
                 }
-            });
-
-        left_flex.end();
-
-
-        let right_flex = group::Flex::default()
-            .column();
-
-            for i in data::KINDS {
-                let choose_bt = button::CheckButton::default()
-                    .with_label(i);
-
-                buffer.check_bts.push((choose_bt, {
-                    let t: Vec<&str> = i.split(" - ").collect();
-                    t[0].to_string()
-                }, i.to_string()));
+                true
             }
+            Event::Unfocus | Event::Deactivate => {
+                double_click_status_clear();
+                true
+            }
+            _ => false,
+        }
+    });
 
-            let year_flex = group::Flex::default()
-                .row();
+    left_flex.end();
 
-                buffer.min_year_input = input::IntInput::default();
-                buffer.min_year_input.set_value("2022");
+    let right_flex = group::Flex::default().column();
 
-                let mut mid_label = output::Output::default();
-                mid_label.set_value(" to");
-                mid_label.set_frame(enums::FrameType::FlatBox);
+    for i in data::KINDS {
+        let choose_bt = button::CheckButton::default().with_label(i);
 
-                buffer.max_year_input = input::IntInput::default();
-                buffer.max_year_input.set_value("2022");
+        buffer.check_bts.push((
+            choose_bt,
+            {
+                let t: Vec<&str> = i.split(" - ").collect();
+                t[0].to_string()
+            },
+            i.to_string(),
+        ));
+    }
 
-            year_flex.end();
+    let year_flex = group::Flex::default().row();
 
-            let bts_flex = group::Flex::default()
-                .row();
+    buffer.min_year_input = input::IntInput::default();
+    buffer.min_year_input.set_value("2022");
 
-                let mut start_bt = button::Button::default()
-                    .with_label("Start");
-                start_bt.set_color(Color::White);
-                start_bt.emit(buffer.sender, Message::Start);
+    let mut mid_label = output::Output::default();
+    mid_label.set_value(" to");
+    mid_label.set_frame(enums::FrameType::FlatBox);
 
-                let mut stop_bt = button::Button::default()
-                    .with_label("Stop");
-                stop_bt.set_color(Color::White);
-                stop_bt.emit(buffer.sender, Message::Stop);
+    buffer.max_year_input = input::IntInput::default();
+    buffer.max_year_input.set_value("2022");
 
-            bts_flex.end();
+    year_flex.end();
 
-        right_flex.end();
+    let bts_flex = group::Flex::default().row();
+
+    let mut start_bt = button::Button::default().with_label("Start");
+    start_bt.set_color(Color::White);
+    start_bt.emit(buffer.sender, Message::Start);
+
+    let mut stop_bt = button::Button::default().with_label("Stop");
+    stop_bt.set_color(Color::White);
+    stop_bt.emit(buffer.sender, Message::Stop);
+
+    bts_flex.end();
+
+    right_flex.end();
 
     flex.end();
-
 
     let save_path_group = group::Row::default()
         .with_size(root.width() - 10, 25)
         .with_pos(5, flex.height() + 10);
 
-        // 修改保存路径的按钮
-        buffer.save_path_output = output::Output::default();
-        buffer.save_path_output.set_value( format!("Save Path: {}", data::get_save_dir()).as_str() );
+    // 修改保存路径的按钮
+    buffer.save_path_output = output::Output::default();
+    buffer
+        .save_path_output
+        .set_value(format!("Save Path: {}", data::get_save_dir()).as_str());
 
-        let change_path_bt_flex = group::Row::default();
-            let mut save_path_bt = button::Button::default()
-                .with_label( "Change Save Path" );
-            save_path_bt.emit(buffer.sender, Message::ChangeSavePath);
-            save_path_bt.set_color(Color::White);
-            let mut reset_bt = button::Button::default()
-                .with_label("Reset Save Path");
-            reset_bt.emit(buffer.sender, Message::ResetSavePath);
-            reset_bt.set_color(Color::White);
-        change_path_bt_flex.end();
+    let change_path_bt_flex = group::Row::default();
+    let mut save_path_bt = button::Button::default().with_label("Change Save Path");
+    save_path_bt.emit(buffer.sender, Message::ChangeSavePath);
+    save_path_bt.set_color(Color::White);
+    let mut reset_bt = button::Button::default().with_label("Reset Save Path");
+    reset_bt.emit(buffer.sender, Message::ResetSavePath);
+    reset_bt.set_color(Color::White);
+    change_path_bt_flex.end();
 
     save_path_group.end();
 
@@ -342,7 +356,7 @@ pub fn change_save_path(watcher: &mut hotwatch::Hotwatch, path: &str) {
     // 修改监听路径
     match watcher.unwatch(last_path) {
         Ok(_) => (),
-        Err(_) => ()
+        Err(_) => (),
     };
     let p = data::get_save_dir();
     if !Path::new(&p).exists() {
@@ -350,12 +364,14 @@ pub fn change_save_path(watcher: &mut hotwatch::Hotwatch, path: &str) {
         std::fs::create_dir_all(&p).unwrap();
     }
     println!("Start to watch: {}", &p);
-    watcher.watch(&p, |e: hotwatch::Event| {
-        println!("{:?}", e);
-        unsafe {
-            IF_SAVE_DIR_CONTENT_CHANGE = true;
-        };
-    }).unwrap();
+    watcher
+        .watch(&p, |e: hotwatch::Event| {
+            println!("{:?}", e);
+            unsafe {
+                IF_SAVE_DIR_CONTENT_CHANGE = true;
+            };
+        })
+        .unwrap();
 
     unsafe {
         IF_SAVE_DIR_CHANGE = true;

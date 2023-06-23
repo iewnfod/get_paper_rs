@@ -1,7 +1,7 @@
-use std::{io::{Read}, path::Path};
+use std::{io::Read, path::Path};
 
-use fltk::{prelude::*, dialog, enums};
-use ui::{Message, network::*};
+use fltk::{dialog, enums, prelude::*};
+use ui::{network::*, Message};
 mod ui;
 
 // main
@@ -15,27 +15,25 @@ async fn main() {
     app.set_scheme(fltk::app::Scheme::Gtk);
     let (sender, receiver) = fltk::app::channel::<ui::Message>();
     let mut root = fltk::window::Window::default()
-        .with_size(unsafe {ui::data::WIDTH}, unsafe {ui::data::HEIGHT})
+        .with_size(unsafe { ui::data::WIDTH }, unsafe { ui::data::HEIGHT })
         .center_screen()
         .with_label("Get CAIE Paper");
     root.resizable(&root);
     root.handle({
-        move |w, event| {
-            match event {
-                enums::Event::Resize => {
-                    unsafe {
-                        ui::data::WIDTH = w.width();
-                        ui::data::HEIGHT = w.height();
-                    };
-                    refresh_config_content(false);
-                    true
-                }
-                _ => false
+        move |w, event| match event {
+            enums::Event::Resize => {
+                unsafe {
+                    ui::data::WIDTH = w.width();
+                    ui::data::HEIGHT = w.height();
+                };
+                refresh_config_content(false);
+                true
             }
+            _ => false,
         }
     });
 
-    let mut buffer= ui::add_widgets(&mut root, sender);
+    let mut buffer = ui::add_widgets(&mut root, sender);
 
     root.show();
 
@@ -44,7 +42,9 @@ async fn main() {
     while app.wait() {
         app.redraw();
         // 刷新状态栏
-        buffer.status_bar.set_value(unsafe { &ui::STATUS_BAR_CONTENT });
+        buffer
+            .status_bar
+            .set_value(unsafe { &ui::STATUS_BAR_CONTENT });
 
         // 刷新文件系统
         if unsafe { ui::IF_SAVE_DIR_CONTENT_CHANGE } {
@@ -69,7 +69,6 @@ async fn main() {
             unsafe { DOWNLOADING = false };
         }
 
-
         if let Some(msg) = receiver.recv() {
             match msg {
                 Message::Start => {
@@ -90,49 +89,58 @@ async fn main() {
 
                         ui::change_status_bar_content(&"Start!".to_string());
 
-                        download_threads.push(
-                            tokio::spawn( async move {
-                                println!("Spawn Start");
+                        download_threads.push(tokio::spawn(async move {
+                            println!("Spawn Start");
 
-                                start(min_year, max_year, check_bts).await;
-                                unsafe { DOWNLOADING = false };
-                                println!("Spawn Finish");
-                                // return ;
-                            })
-                        )
+                            start(min_year, max_year, check_bts).await;
+                            unsafe { DOWNLOADING = false };
+                            println!("Spawn Finish");
+                            // return ;
+                        }))
                     } else {
                         ui::change_status_bar_content(&"Last download has not finished. Please try again after it is finished. ".to_string());
                     }
-                },
+                }
                 Message::Stop => {
                     if unsafe { DOWNLOADING } {
                         println!("Trying to stop. ");
                         ui::change_status_bar_content(&"Trying to stop".to_string());
                         unsafe { DOWNLOADING = false };
                     }
-                },
+                }
                 Message::Open => {
                     // println!("Open");
                     if let Some(items) = buffer.file_system.get_selected_items() {
-                        let save_path = Path::new(&ui::data::get_save_dir()).parent().unwrap().to_path_buf();
+                        let save_path = Path::new(&ui::data::get_save_dir())
+                            .parent()
+                            .unwrap()
+                            .to_path_buf();
                         for item in items {
-                            let item_path = Path::new(&buffer.file_system.item_pathname(&item).unwrap()).to_path_buf();
+                            let item_path =
+                                Path::new(&buffer.file_system.item_pathname(&item).unwrap())
+                                    .to_path_buf();
                             open::that(save_path.clone().join(&item_path)).unwrap();
                         }
                     }
-                },
+                }
                 Message::ChangeSavePath => {
-                    let mut dir_dialog = dialog::NativeFileChooser::new(dialog::NativeFileChooserType::BrowseDir);
+                    let mut dir_dialog =
+                        dialog::NativeFileChooser::new(dialog::NativeFileChooserType::BrowseDir);
                     dir_dialog.show();
                     let dir_path = dir_dialog.filename();
                     if dir_path.exists() {
                         if dir_path.is_dir() {
-                            ui::change_status_bar_content(&format!("Changing save path to {:?}.", &dir_path));
+                            ui::change_status_bar_content(&format!(
+                                "Changing save path to {:?}.",
+                                &dir_path
+                            ));
 
                             // 如果他是一个目录，那就修改
                             ui::change_save_path(&mut watcher, dir_path.to_str().unwrap());
 
-                            buffer.save_path_output.set_value(format!(" Save Path: {}", ui::data::get_save_dir()).as_str());
+                            buffer.save_path_output.set_value(
+                                format!(" Save Path: {}", ui::data::get_save_dir()).as_str(),
+                            );
                             // 清空文件树，并刷新
                             buffer.file_system.clear();
                             match buffer.refresh_file_system() {
@@ -145,15 +153,20 @@ async fn main() {
                             // 修改配置文件
                             refresh_config_content(false);
                         } else if dir_path.is_file() {
-                            ui::change_status_bar_content(&format!("{:?} is not a directory.", &dir_path));
+                            ui::change_status_bar_content(&format!(
+                                "{:?} is not a directory.",
+                                &dir_path
+                            ));
                         }
                     }
-                },
+                }
 
                 Message::ResetSavePath => {
                     let default_path = ui::data::get_default_save_dir();
                     ui::change_save_path(&mut watcher, &default_path);
-                    buffer.save_path_output.set_value(format!(" Save Path: {}", &default_path).as_str());
+                    buffer
+                        .save_path_output
+                        .set_value(format!(" Save Path: {}", &default_path).as_str());
 
                     // 清空文件树，并刷新
                     buffer.file_system.clear();
@@ -167,11 +180,9 @@ async fn main() {
                     // 修改配置文件
                     refresh_config_content(false);
                 }
-
             }
         }
     }
-
 }
 
 // init 表示是否是初始化时的调用，如果是，那就不会进行根据现有内容写入的操作
@@ -188,13 +199,14 @@ fn refresh_config_content(init: bool) {
 }
 
 fn generate_config_content() -> String {
-    let content = format!("
+    let content = format!(
+        "
 save_dir={}
 width={}
 height={}",
         ui::data::get_save_dir(),
-        unsafe {ui::data::WIDTH},
-        unsafe {ui::data::HEIGHT}
+        unsafe { ui::data::WIDTH },
+        unsafe { ui::data::HEIGHT }
     );
 
     content
@@ -227,10 +239,10 @@ fn init() -> hotwatch::Hotwatch {
         match key {
             "save_dir" => {
                 ui::change_save_path(&mut watcher, value);
-            },
+            }
             "width" => {
                 unsafe { ui::data::WIDTH = value.parse().unwrap() };
-            },
+            }
             "height" => {
                 unsafe { ui::data::HEIGHT = value.parse().unwrap() };
             }

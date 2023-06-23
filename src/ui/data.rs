@@ -1,4 +1,4 @@
-use std::{path::{Path, PathBuf}};
+use std::path::{Path, PathBuf};
 
 pub const KINDS: &[&str] = &[
     "0413 - Physical Education (IGCSE)",
@@ -36,25 +36,22 @@ pub const KINDS: &[&str] = &[
     "9709 - Mathematics (AS-A2)",
     "9713 - Applied ICT (AS-A2)",
     "9715 - Chinese First Language (AS-A2)",
-    "9990 - Psychology (AS-A2)"
+    "9990 - Psychology (AS-A2)",
 ];
 
 pub const SEARCH_URL: &str = "https://cie.fraft.cn/obj/Fetch/renum";
 pub const FETCH_URL: &str = "https://cie.fraft.cn/obj/Fetch/redir/";
 
-pub const SEASONS: &[&str] = &[
-    "Jun",
-    "Nov",
-    "Mar",
-    "Gen"
-];
+pub const SEASONS: &[&str] = &["Jun", "Nov", "Mar", "Gen"];
 
 pub fn base_dir() -> PathBuf {
     if let Some(home) = dirs::home_dir() {
         if cfg!(target_os = "windows") {
             return home.join("AppData\\Local\\get-paper-rs").to_path_buf();
         } else if cfg!(target_os = "macos") {
-            return home.join("Library/Application Support/get-paper-rs").to_path_buf();
+            return home
+                .join("Library/Application Support/get-paper-rs")
+                .to_path_buf();
         } else {
             return home.join("get-paper-rs").to_path_buf();
         }
@@ -70,18 +67,27 @@ pub fn get_save_dir() -> String {
     let p = unsafe { SAVE_DIR.clone() };
     match p {
         Some(val) => val,
-        None => base_dir().join(DEFAULT_SAVE_DIR.to_string()).to_str().unwrap().to_string()
+        None => base_dir()
+            .join(DEFAULT_SAVE_DIR.to_string())
+            .to_str()
+            .unwrap()
+            .to_string(),
     }
 }
 pub fn get_default_save_dir() -> String {
-    base_dir().join(DEFAULT_SAVE_DIR.to_string()).to_str().unwrap().to_string()
+    base_dir()
+        .join(DEFAULT_SAVE_DIR.to_string())
+        .to_str()
+        .unwrap()
+        .to_string()
 }
 
-pub const DOUBLE_CLICK_INTERVAL: f32 = 0.5;  // 秒为单位
+pub const DOUBLE_CLICK_INTERVAL: f32 = 0.5; // 秒为单位
 
 pub fn default_config_content() -> String {
     unsafe {
-        format!("
+        format!(
+            "
 save_dir={}
 width={}
 height={}",
