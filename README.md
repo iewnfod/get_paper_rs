@@ -1,5 +1,5 @@
 # Get Paper - rust
-***An application to download CAIE papers.***
+***An application to download CAIE past papers.***
 
 ## Preview
 | Windows 11 | MacOS |
