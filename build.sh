@@ -5,3 +5,6 @@ strip -o target/release/get_paper_rs-stripped target/release/get_paper_rs
 # 重命名
 mv target/release/get_paper_rs target/release/get_paper_rs-darwin
 mv target/release/get_paper_rs-stripped target/release/get_paper_rs-darwin-stripped
+
+# 构建 app
+cargo bundle --release
