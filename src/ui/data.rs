@@ -40,6 +40,8 @@ pub const KINDS: &[&str] = &[
     "9990 - Psychology (AS-A2)",
 ];
 
+/// 用于获取可用学科的url
+pub const SUBJECT_URL: &str = "https://cie.fraft.cn/obj/Combo/subject";
 /// 用于搜索可用试卷的url
 pub const SEARCH_URL: &str = "https://cie.fraft.cn/obj/Fetch/renum";
 /// 用于获取试卷的url

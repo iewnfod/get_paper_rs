@@ -1,6 +1,6 @@
 use std::{io::Read, path::Path};
 
-use fltk::{dialog, enums, prelude::*};
+use fltk::{dialog, enums, prelude::*, button::CheckButton};
 use ui::{network::*, Message};
 mod ui;
 
@@ -9,6 +9,21 @@ mod ui;
 async fn main() {
     // 初始化
     let mut watcher = init();
+    // 获取学科
+    static mut SUBJECTS: Vec<(String, String)> = vec![];
+    let subjects_handler = tokio::spawn(
+        async {
+            let re = get_subjects().await;
+            let subject = match re {
+                Ok(sub) => sub,
+                Err(_) => vec![]
+            };
+            unsafe {
+                SUBJECTS = subject;
+            };
+        }
+    );
+    let mut subjects_updated = false;
 
     // 软件运行
     let mut app = fltk::app::App::default();
@@ -40,6 +55,21 @@ async fn main() {
     let mut download_threads: Vec<tokio::task::JoinHandle<()>> = vec![];
 
     while app.wait() {
+        // 查看学科获取是否结束
+        if subjects_handler.is_finished() && !subjects_updated {
+            println!("Updating Buttons");
+            buffer.check_bts.clear();
+            for (value, text) in unsafe{SUBJECTS.clone()} {
+                buffer.check_bts.push((
+                    CheckButton::default().with_label(&text),
+                    value,
+                    text
+                ));
+            }
+            app.redraw();
+            subjects_updated = true;
+        }
+        // 重新渲染
         app.redraw();
         // 刷新状态栏
         buffer

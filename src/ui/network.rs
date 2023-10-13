@@ -119,6 +119,22 @@ async fn search_file(subject: &str, year: &str, season: &str) -> serde_json::Val
     return result;
 }
 
+/// 异步获取可用学科
+pub async fn get_subjects() -> anyhow::Result<Vec<(String, String)>> {
+    println!("Getting Subjects");
+    let url = data::SUBJECT_URL.to_string();
+    let response = reqwest::get(url).await?.text().await?;
+
+    let mut result = vec![];
+    let res: serde_json::Value = serde_json::from_str(response.as_str()).unwrap();
+    for sub in res.as_array().unwrap() {
+        let text = sub["text"].as_str().unwrap();
+        let t = text.split('/').collect::<Vec<&str>>().join("~");
+        result.push((sub["value"].as_str().unwrap().to_string(), t));
+    }
+    Ok(result)
+}
+
 /// 异步下载
 /// * param `url: &String` 目标文件的url地址
 /// * param `save_path: &String` 保存文件的路径

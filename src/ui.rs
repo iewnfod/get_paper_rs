@@ -354,7 +354,7 @@ pub fn add_widgets(root: &mut window::Window, sender: app::Sender<Message>) -> B
     buffer.save_path_output = output::Output::default();
     buffer
         .save_path_output
-        .set_value(format!("Save Path: {}", data::get_save_dir()).as_str());
+        .set_value(format!(" Save Path: {}", data::get_save_dir()).as_str());
 
     let change_path_bt_flex = group::Row::default();
     let mut save_path_bt = button::Button::default().with_label("Change Save Path");
