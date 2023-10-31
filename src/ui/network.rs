@@ -41,20 +41,21 @@ pub async fn start(min_year: isize, max_year: isize, check_bts: Vec<(bool, Strin
                     let available_files =
                         search_file(&code, year.to_string().as_str(), season).await;
 
-                    // println!("{}", available_files);
+                    println!("{}", available_files);
 
-                    if available_files["status"] == 0 {
-                        let files_value = &available_files["data"];
+                    if available_files["total"] != 0 {
+                        let files_value = &available_files["rows"];
                         if let Some(files) = files_value.as_array() {
                             for i in files.iter() {
                                 // 如果 downloading 被改成 false 了，表示他要停止了
                                 if should_stop() {
                                     return;
                                 }
-                                let file_name = i[0].to_string();
+                                let file_name = i["file"].to_string();
                                 let file_name = file_name[1..file_name.len() - 1].to_string();
                                 // println!("{}", file_name);
                                 let mut url = data::FETCH_URL.to_string();
+                                url.push('/');
                                 url.push_str(&file_name.as_str());
                                 let save_path = Path::new(&data::get_save_dir())
                                     .join(name)
@@ -140,6 +141,7 @@ pub async fn get_subjects() -> anyhow::Result<Vec<(String, String)>> {
 /// * param `save_path: &String` 保存文件的路径
 /// * return `bool` 是否下载成功
 async fn download(url: &String, save_path: &String) -> bool {
+    println!("Target Url: {}", url);
     if should_stop() {
         return true;
     }

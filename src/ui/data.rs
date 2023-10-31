@@ -45,7 +45,7 @@ pub const SUBJECT_URL: &str = "https://cie.fraft.cn/obj/Combo/subject";
 /// 用于搜索可用试卷的url
 pub const SEARCH_URL: &str = "https://cie.fraft.cn/obj/Fetch/renum";
 /// 用于获取试卷的url
-pub const FETCH_URL: &str = "https://cie.fraft.cn/obj/Fetch/redir/";
+pub const FETCH_URL: &str = "https://cie.fraft.cn/obj/Fetch/redir";
 /// 所有试卷时间
 pub const SEASONS: &[&str] = &["Jun", "Nov", "Mar", "Gen"];
 
