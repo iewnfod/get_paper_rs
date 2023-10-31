@@ -1,6 +1,6 @@
 [package]
 name = "get_paper_rs"
-version = "0.3.4"
+version = "0.4.0"
 edition = "2021"
 description = "An application to download CAIE past papers"
 
@@ -8,7 +8,6 @@ description = "An application to download CAIE past papers"
 [package.metadata.bundle]
 name = "Get Paper Rust"
 identifier = "com.iewnfod.getPaperRs"
-version = "0.3.4"
 copyright = "Copyright (c) Iewnfod 2023. All rights reserved."
 short_description = "Get CAIE Past Papers"
 
