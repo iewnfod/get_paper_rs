@@ -23,7 +23,7 @@ async fn main() {
             };
         }
     );
-    let mut subjects_updated = false;
+    let mut subjects_updated = true;
 
     // 软件运行
     let mut app = fltk::app::App::default();

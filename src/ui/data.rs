@@ -51,18 +51,23 @@ pub const SEASONS: &[&str] = &["Jun", "Nov", "Mar", "Gen"];
 
 /// 获取基础路径，也就是设置文件所在的目录
 pub fn base_dir() -> PathBuf {
+    let id = "com.iewnfod.getPaperRs";
     if let Some(home) = dirs::home_dir() {
         if cfg!(target_os = "windows") {
-            return home.join("AppData\\Local\\get-paper-rs").to_path_buf();
+            return home
+                .join("AppData\\Local")
+                .join(id)
+                .to_path_buf();
         } else if cfg!(target_os = "macos") {
             return home
-                .join("Library/Application Support/get-paper-rs")
+                .join("Library/Application Support/")
+                .join(id)
                 .to_path_buf();
         } else {
-            return home.join("get-paper-rs").to_path_buf();
+            return home.join(id).to_path_buf();
         }
     } else {
-        Path::new("get-paper-rs").to_path_buf()
+        Path::new(id).to_path_buf()
     }
 }
 
