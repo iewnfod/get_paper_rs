@@ -154,7 +154,10 @@ async fn download(url: &String, save_path: &String) -> bool {
     std::fs::create_dir_all(prefix).unwrap();
 
     // 发送请求，获取文件
-    let response = reqwest::get(url).await.unwrap();
+    let response = match reqwest::get(url).await {
+        Ok(d) => d,
+        Err(_) => return false
+    };
 
     println!("{} : {}", save_path, response.status());
 
